@@ -103,11 +103,53 @@ class App extends Controller
         ]);
     }
 
+    /**
+     * APP | Edita Equipamento
+     * @param array $data
+     * @return void
+     */
+    public function editEquipment(array $data): void
+    {
+        $equipmentId = filter_var($data['id'], FILTER_VALIDATE_INT);
+        $equipment = (new Equipment())->findById($equipmentId);
+
+        if (!$equipment) {
+            $this->message->error("Equipamento não encontrado!")->toast()->flash();
+            redirect("/app/equipamentos");
+        }
+
+        $this->renderPage("editEquipment", [
+            "active"      => "equipments",
+            "title"       => "Editar Equipamento",
+            "subtitle"    => "Edite os dados do equipamento",
+            "equipment"   => $equipment
+        ]);
+    }
+
+    /**
+     * APP | Salva ou Atualiza Equipamento
+     * @param array $data
+     * @return void
+     */
     public function saveEquipment(array $data): void
     {
         $data = filter_var_array($data, FILTER_UNSAFE_RAW);
 
-        $equipment = new Equipment();
+        $equipmentId = null;
+        if (!empty($data['id']) && $data['_method'] === 'PUT') {
+            $equipmentId = filter_var($data['id'], FILTER_VALIDATE_INT);
+        }
+
+        $equipment = ($equipmentId ? (new Equipment())->findById($equipmentId) : new Equipment());
+
+        if (!$equipment) {
+            jsonResponse([
+                "success" => false,
+                "message" => $this->message->error("Equipamento não encontrado para atualização.")->toast()->render()
+            ]);
+            return;
+        }
+
         $equipment->type = $data['type'] ?? '';
         $equipment->manufacturer = $data['manufacturer'] ?? '';
         $equipment->model = $data['model'] ?? '';
@@ -120,13 +162,53 @@ class App extends Controller
                 "message" => ($equipment->message() ?: $this->message)
                     ->error("Erro ao salvar o equipamento.")->toast()->render()
             ]);
+            return;
         }
 
-        $this->message->success("Equipamento cadastrado com sucesso!")->toast()->flash();
+        $message = $equipmentId ? "Equipamento atualizado com sucesso!" : "Equipamento cadastrado com sucesso!";
+        $this->message->success($message)->toast()->flash();
 
         jsonResponse([
             "success"  => true,
-            "message"  => $this->message->success("Equipamento cadastrado com sucesso!")->toast()->render(),
+            "message"  => $this->message->success($message)->toast()->render(),
+            "redirect" => url("/app/equipamentos")
+        ]);
+    }
+
+    // Usuários
+
+    /**
+     * APP | Exclui Equipamento
+     * @param array $data
+     * @return void
+     */
+    public function deleteEquipment(array $data): void
+    {
+        $equipmentId = filter_var($data['id'], FILTER_VALIDATE_INT);
+        $equipment = (new Equipment())->findById($equipmentId);
+
+        if (!$equipment) {
+            jsonResponse([
+                "success" => false,
+                "message" => $this->message->error("Equipamento não encontrado para exclusão.")->toast()->render()
+            ]);
+            return;
+        }
+
+        if (!$equipment->destroy()) {
+            jsonResponse([
+                "success" => false,
+                "message" => ($equipment->message() ?: $this->message)
+                    ->error("Erro ao excluir o equipamento.")->toast()->render()
+            ]);
+            return;
+        }
+
+        $this->message->success("Equipamento excluído com sucesso!")->toast()->flash();
+
+        jsonResponse([
+            "success"  => true,
+            "message"  => $this->message->success("Equipamento excluído com sucesso!")->toast()->render(),
             "redirect" => url("/app/equipamentos")
         ]);
     }

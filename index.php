@@ -59,9 +59,11 @@ $route->group('/app');
 $route->get('/', 'App:home');
 
 //Equipamentos
+$route->get('/equipamento/{id}', 'App:editEquipment');
 $route->get('/equipamento', 'App:equipment');
 $route->get('/equipamentos', 'App:equipments');
 $route->post('/equipamento', 'App:saveEquipment');
+$route->delete('/equipamento/{id}', 'App:deleteEquipment');
 
 
 // Usuários
