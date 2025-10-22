@@ -28,6 +28,16 @@ class Account extends Model
         return $person ? $person->full_name : $this->email;
     }
 
+    public function photo(): string
+    {
+        if ($this->avatar && file_exists(__DIR__ . "/../../" . CONF_UPLOAD_DIR . "/{$this->avatar}")) {
+            return image($this->avatar, 360, 360);
+        }
+
+        return url("/shared/assets/images/avatar.jpg");
+    }
+
+
     /**
      * Inicializa a conta
      */

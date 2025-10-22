@@ -8,6 +8,8 @@ use Source\Models\Auth;
 use Source\Models\Report\Access;
 use Source\Models\Report\Online;
 use Source\Models\User;
+use Source\Support\Thumb;
+use Source\Support\Upload;
 
 /**
  * APP | Controller
@@ -15,7 +17,7 @@ use Source\Models\User;
  */
 class App extends Controller
 {
-    /** @var User */
+    /** @var Account */
     private $user;
 
     /** APP | Constructor */
@@ -215,7 +217,109 @@ class App extends Controller
 
     // Usuários
 
-    //Vou fazer os usuários depois
+    /** APP | Perfil */
+    public function profile(): void
+    {
+        $this->renderPage("profile", [
+            "active"      => "profile",
+            "title"       => "Perfil",
+            "subtitle"    => "Gerencie seu perfil",
+            "user"        => $this->user
+        ]);
+    }
+
+    public function profileSave(array $data): void
+    {
+        $user = $this->user; // Account
+        $person = $user->person();
+
+        // === Upload da foto de perfil ===
+        if (!empty($_FILES["photo"]) and $_FILES["photo"]["size"] > 0) {
+            $file = $_FILES["photo"];
+            $upload = new Upload();
+
+            // Remove imagem anterior
+            if (!empty($user->avatar)) {
+                (new Thumb())->flush("storage/{$user->avatar}");
+                $upload->remove("storage/{$user->avatar}");
+            }
+
+            // Faz upload da nova
+            if (!$avatarPath = $upload->image($file, "{$person->full_name}-" . time(), 360)) {
+                $json["message"] = $upload->message()
+                    ->before("Ooops {$person->shortName()}! ")
+                    ->after(".")
+                    ->toast()
+                    ->render();
+                echo json_encode($json);
+                return;
+            }
+
+            $user->avatar = $avatarPath;
+        }
+
+        // === Atualiza dados da pessoa ===
+        $person->full_name   = $data["full_name"] ?? $person->full_name;
+        $person->document    = $data["document"] ?? $person->document;
+        $person->person_type = $data["person_type"] ?? $person->person_type;
+        $person->birth_date  = !empty($data["birth_date"]) ? $data["birth_date"] : $person->birth_date;
+        $person->save();
+
+        // === Atualiza e-mail ===
+        if (!empty($data["email"])) {
+            $user->email = $data["email"];
+        }
+        $user->save();
+
+        // === Atualiza contatos ===
+        foreach (["phone", "whatsapp"] as $type) {
+            $value = trim($data[$type] ?? "");
+            if (empty($value)) {
+                continue;
+            }
+
+            $contact = (new \Source\Models\App\Contact())
+                ->find("person_id = :pid AND contact_type = :t", "pid={$person->id}&t={$type}")
+                ->fetch();
+
+            if (!$contact) {
+                $contact = new \Source\Models\App\Contact();
+                $contact->person_id = $person->id;
+                $contact->contact_type = $type;
+            }
+
+            $contact->value = $value;
+            $contact->save();
+        }
+
+        // === Atualiza endereço ===
+        $address = $person->address() ?? new \Source\Models\App\Address();
+
+        $address->street     = $data["street"]     ?? $address->street;
+        $address->number     = $data["number"]     ?? $address->number;
+        $address->district   = $data["district"]   ?? $address->district;
+        $address->city       = $data["city"]       ?? $address->city;
+        $address->state      = !empty($data["state"]) ? strtoupper($data["state"]) : $address->state;
+        $address->zipcode    = $data["zipcode"]    ?? $address->zipcode;
+        $address->complement = $data["complement"] ?? $address->complement;
+        $address->save();
+
+        // Vincula endereço à pessoa (caso ainda não exista)
+        if (!$person->address()) {
+            $pa = new \Source\Models\App\PersonAddress();
+            $pa->person_id    = $person->id;
+            $pa->address_id   = $address->id;
+            $pa->address_type = "billing";
+            $pa->save();
+        }
+
+        // === Resposta ===
+        $json["success"] = true;
+        $json["message"] = $this->message->success("Perfil atualizado com sucesso!")->toast()->render();
+        echo json_encode($json);
+    }
+
+
 
     /** APP | Logout */
     public function logout(): void

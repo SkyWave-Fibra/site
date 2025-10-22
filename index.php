@@ -74,6 +74,10 @@ $route->get('/usuarios/nova',       'App:user');
 $route->post('/users/save',         'App:saveUserPost');
 $route->post('/users/roles',        'App:saveUserRolesPost');
 
+$route->get('/perfil', 'App:profile');
+$route->post("/profile-save", "App:profileSave");
+
+
 //Logout
 $route->get('/sair', 'Web:logout');
 
