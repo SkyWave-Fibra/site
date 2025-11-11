@@ -50,7 +50,7 @@ $route->get('/obrigado/{email}', 'Web:success');
 $route->group(null);
 $route->get('/termos', 'Web:terms');
 $route->get('/privacidade', 'Web:privacy');
-$route->get('/status', 'Web:status');
+// $route->get('/status', 'Web:status');
 
 
 /**

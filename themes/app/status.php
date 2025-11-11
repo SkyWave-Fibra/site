@@ -79,7 +79,7 @@ try {
 <div class="modal fade" id="modalStatus" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered mw-650px">
         <div class="modal-content">
-            <form class="form" id="formStatus">
+            <form action="<?= url() ?>/app/status/save" class="form" id="formStatus">
                 <input type="hidden" name="id" id="status_id">
                 <div class="modal-header">
                     <h2 class="fw-bold" id="tituloModal">Adicionar Novo Status</h2>
