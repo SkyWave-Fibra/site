@@ -86,8 +86,7 @@ class App extends Controller
      */
 public function home(): void
     {
-        // Certifique-se de que no topo do App.php não há aliases conflitando (ex: use Source\Models\App\Contract as ContractModel)
-        
+
         $user = Auth::account();
         $current_plan = null;
         $suggested_plan = null;

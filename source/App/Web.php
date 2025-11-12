@@ -34,6 +34,7 @@ class Web extends Controller
      */
     public function home(): void
     {
+
         $head = $this->seo->render(
             CONF_SITE_NAME,
             CONF_SITE_DESC,
