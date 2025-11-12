@@ -50,6 +50,7 @@ $route->get('/obrigado/{email}', 'Web:success');
 $route->group(null);
 $route->get('/termos', 'Web:terms');
 $route->get('/privacidade', 'Web:privacy');
+// $route->get('/status', 'Web:status');
 
 
 
@@ -58,6 +59,12 @@ $route->get('/privacidade', 'Web:privacy');
  */
 $route->group('/app');
 $route->get('/', 'App:home');
+
+// ROTA PARA STATUS DE SERVIÇO (ACESSO EM /app/status)
+$route->get('/status', 'App:serviceStatus'); 
+$route->post('/status/save', 'App:saveServiceStatusPost');
+$route->delete('/status/delete/{id}', 'App:deleteServiceStatus');
+$route->get('/status/data', 'App:getServiceStatusData'); // Nova rota para dados do DataTables
 
 //Equipamentos
 // $route->get('/equipamentos', 'App:equipments');
@@ -171,7 +178,7 @@ $route->post("/profile-save", "App:profileSave");
 
 
 //Logout
-$route->get('/sair', 'Web:logout');
+$route->get('/sair', 'App:logout');
 
 //END ROUTES
 $route->namespace("Source\App");

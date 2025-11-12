@@ -32,7 +32,8 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 	<!--end::Fonts-->
 	<!--begin::Vendor Stylesheets(used for this page only)-->
 	<link href="assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css" />
-	<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+	<!-- Carrega o DataTables CSS principal de um CDN -->
+	<link href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
 	<!--end::Vendor Stylesheets-->
 	<!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
 	<link href="assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -47,6 +48,9 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 <!--begin::Body-->
 
 <body id="kt_app_body" data-kt-app-header-fixed-mobile="true" data-kt-app-toolbar-enabled="true" class="app-default">
+
+	<!-- Adicionado jQuery explicitamente para garantir o carregamento antes de outros scripts -->
+	<script src="<?= url("/shared/assets/libs/jquery/dist/jquery.min.js") ?>"></script>
 
 	<!--begin::Page loading(append to body)-->
 	<div class="page-loader flex-column bg-dark bg-opacity-25">
@@ -3873,7 +3877,8 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 	<script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
 	<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesLow.js"></script>
 	<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasLow.js"></script>
-	<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+	<!-- Carrega o DataTables JS principal de um CDN -->
+	<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 	<!--end::Vendors Javascript-->
 	<!--begin::Custom Javascript(used for this page only)-->
 	<script src="assets/js/widgets.bundle.js"></script>

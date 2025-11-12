@@ -87,7 +87,7 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="dashboards/marketing.html" class="menu-link">
+                                            <a href="<?= url("/app/status") ?>" class="menu-link">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-chart-simple text-gray-900 fs-1"></i>
                                                 </span>

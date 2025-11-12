@@ -2,6 +2,7 @@
 
 namespace Source\App;
 
+use PDOException;
 use Source\Core\Controller;
 use Source\Models\Account;
 use Source\Models\App\Equipment;
@@ -81,13 +82,13 @@ class App extends Controller
     }
 
     /** APP | Home */
-/**
+    /**
      * APP HOME (PÁGINA PRINCIPAL DO CLIENTE)
      */
-public function home(): void
+    public function home(): void
     {
         // Certifique-se de que no topo do App.php não há aliases conflitando (ex: use Source\Models\App\Contract as ContractModel)
-        
+
         $user = Auth::account();
         $current_plan = null;
         $suggested_plan = null;
@@ -107,7 +108,7 @@ public function home(): void
                     "price > :p",
                     "p={$current_plan->price}"
                 )->order("price ASC")
-                 ->fetch();
+                    ->fetch();
             }
         }
 
@@ -119,6 +120,257 @@ public function home(): void
             "suggested_plan" => $suggested_plan
         ]);
     }
+
+    public function serviceStatus(): void
+    {
+        // ATENÇÃO: A VIEW CHAMA AGORA "status", esperando o arquivo 'status.php'
+        $this->renderPage("status", [
+            "active"      => "status",
+            "title"       => "Status do Serviço",
+            "subtitle"    => "Acompanhe a disponibilidade de nossos serviços",
+            // Aqui você pode buscar dados de status de serviços e passá-los para a view
+        ]);
+    }
+
+    /**
+     * APP | Salva ou Atualiza Status de Serviço (via AJAX)
+     * @param array $data
+     * @return void
+     */
+    public function saveServiceStatusPost(?array $data): void
+    {
+        header('Content-Type: application/json'); // Garante que a resposta seja tratada como JSON
+        $json = [];
+        $pdo = \Source\Core\Connect::getInstance(); // Obter a instância PDO
+
+        $id = $data['id'] ?? null;
+        $customer_id = $data['customer_id'] ?? null;
+        $status = $data['status'] ?? null;
+        $reason = $data['reason'] ?? null;
+
+        // Validação básica
+        if (empty($customer_id) || empty($status)) {
+            $json["message"] = "Cliente e Status são obrigatórios.";
+            $json["type"] = "warning";
+            echo json_encode($json);
+            die(); // Garante que nada mais seja enviado
+        }
+
+        // Validação: Verificar se o customer_id existe na tabela customer
+        try {
+            $stmtCheckCustomer = $pdo->prepare("SELECT COUNT(*) FROM customer WHERE person_id = ?");
+            $stmtCheckCustomer->execute([$customer_id]);
+            if ($stmtCheckCustomer->fetchColumn() == 0) {
+                $json["message"] = "Erro: O cliente selecionado não é válido ou não está registrado como cliente.";
+                $json["type"] = "danger";
+                echo json_encode($json);
+                die(); // Garante que nada mais seja enviado
+            }
+        } catch (PDOException $e) {
+            error_log("Erro PDO na validação de cliente em App.php: " . $e->getMessage());
+            $json["message"] = "Erro interno ao validar cliente.";
+            $json["type"] = "danger";
+            echo json_encode($json);
+            die(); // Garante que nada mais seja enviado
+        }
+
+        try {
+            if (empty($id)) {
+                // Verificar se o cliente já possui um status
+                $stmtCheckExisting = $pdo->prepare("SELECT id, customer_id, status, reason FROM service_status WHERE customer_id = ?");
+                $stmtCheckExisting->execute([$customer_id]);
+                $existingStatus = $stmtCheckExisting->fetch(\PDO::FETCH_ASSOC); // Buscar o registro completo
+
+                if ($existingStatus) {
+                    $json["message"] = "Este cliente já possui um status registrado. O formulário de edição foi carregado automaticamente.";
+                    $json["type"] = "warning";
+                    // Adicionar dados do status existente para o frontend abrir o modal de edição
+                    $json["existing_status"] = [
+                        "id" => $existingStatus['id'],
+                        "customer_id" => $existingStatus['customer_id'],
+                        "status" => $existingStatus['status'],
+                        "reason" => $existingStatus['reason']
+                    ];
+                    echo json_encode($json);
+                    die(); // Garante que nada mais seja enviado
+                }
+
+                // Inserir novo status
+                $stmt = $pdo->prepare("INSERT INTO service_status (customer_id, status, reason, changed_at) VALUES (?, ?, ?, NOW())");
+                $stmt->execute([$customer_id, $status, $reason]);
+                $json["message"] = "Status adicionado com sucesso!";
+                $json["type"] = "success";
+            } else {
+                // Atualizar status existente
+                // Ao atualizar, não precisamos verificar duplicidade de customer_id, pois estamos modificando um registro existente.
+                $stmt = $pdo->prepare("UPDATE service_status SET customer_id=?, status=?, reason=?, changed_at=NOW() WHERE id=?");
+                $stmt->execute([$customer_id, $status, $reason, $id]);
+                $json["message"] = "Status atualizado com sucesso!";
+                $json["type"] = "success";
+            }
+            $json["redirect"] = url("/app/status"); // Redireciona para recarregar a lista
+        } catch (PDOException $e) {
+            error_log("Erro PDO ao salvar status em App.php: " . $e->getMessage() . " (Código: " . $e->getCode() . ")");
+            $json["message"] = "Erro PDO ao salvar status: " . $e->getMessage();
+            $json["type"] = "danger";
+        }
+
+        echo json_encode($json);
+        die(); // Adicionado para garantir que nada mais seja enviado
+    }
+
+    /**
+     * APP | Exclui Status de Serviço (via AJAX)
+     * @param array $data
+     * @return void
+     */
+    public function deleteServiceStatus(?array $data): void
+    {
+        $json = [];
+        $pdo = \Source\Core\Connect::getInstance();
+
+        $id = $data['id'] ?? null;
+
+        if (empty($id)) {
+            $json["message"] = $this->message->warning("ID do status não fornecido para exclusão.")->toast()->render();
+            echo json_encode($json);
+            return;
+        }
+
+        try {
+            $stmt = $pdo->prepare("DELETE FROM service_status WHERE id = ?");
+            $stmt->execute([$id]);
+            $json["message"] = $this->message->success("Status excluído com sucesso!")->toast()->render();
+            $json["redirect"] = url("/app/status"); // Redireciona para recarregar a lista
+        } catch (PDOException $e) {
+            error_log("Erro PDO ao excluir status em App.php: " . $e->getMessage());
+            $json["message"] = $this->message->error("Erro PDO ao excluir status: " . $e->getMessage())->toast()->render();
+        }
+
+        echo json_encode($json);
+    }
+
+    /**
+     * APP | Retorna dados de Status de Serviço para DataTables (via AJAX)
+     * @return void
+     */
+    public function getServiceStatusData(): void
+    {
+        header('Content-Type: application/json');
+        $json = ["data" => []];
+        $pdo = \Source\Core\Connect::getInstance();
+
+        // Parâmetros do DataTables
+        $draw = $_GET['draw'] ?? 1;
+        $start = $_GET['start'] ?? 0;
+        $length = $_GET['length'] ?? 10;
+        $searchValue = $_GET['search']['value'] ?? '';
+
+        $recordsTotal = 0;
+        $recordsFiltered = 0;
+
+        try {
+            // Contar total de registros (sem filtro)
+            $stmtTotal = $pdo->query("SELECT COUNT(*) FROM service_status");
+            $recordsTotal = $stmtTotal->fetchColumn();
+
+            $whereClause = "";
+            $params = [];
+
+            if (!empty($searchValue)) {
+                $whereClause = " WHERE p.full_name LIKE :search OR ss.reason LIKE :search OR ss.status LIKE :search";
+                $params[':search'] = '%' . $searchValue . '%';
+            }
+
+            // Contar registros filtrados
+            $stmtFiltered = $pdo->prepare(
+                "
+                SELECT COUNT(ss.id)
+                FROM service_status ss
+                JOIN customer c ON c.person_id = ss.customer_id
+                JOIN person p ON p.id = c.person_id
+                " . $whereClause
+            );
+            $stmtFiltered->execute($params);
+            $recordsFiltered = $stmtFiltered->fetchColumn();
+
+            // Obter dados com paginação e filtro
+            $sqlQuery = "
+                SELECT ss.id, p.full_name AS cliente, ss.status, ss.reason, ss.changed_at, ss.customer_id
+                FROM service_status ss
+                JOIN customer c ON c.person_id = ss.customer_id
+                JOIN person p ON p.id = c.person_id
+                " . $whereClause . "
+                ORDER BY ss.id DESC
+                LIMIT :start, :length
+            ";
+            $stmt = $pdo->prepare($sqlQuery);
+            $stmt->bindValue(':start', (int)$start, \PDO::PARAM_INT);
+            $stmt->bindValue(':length', (int)$length, \PDO::PARAM_INT);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, \PDO::PARAM_STR);
+            }
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $data = [];
+            foreach ($rows as $row) {
+                $statusClassMap = [
+                    'active' => 'badge-light-success',
+                    'suspended' => 'badge-light-warning',
+                    'blocked' => 'badge-light-danger',
+                    'canceled' => 'badge-light-secondary'
+                ];
+                $statusClass = $statusClassMap[$row['status']] ?? 'badge-light-info';
+                $statusHtml = '<span class="badge ' . $statusClass . '">' . ucfirst($row['status']) . '</span>';
+
+                $actionsHtml = '
+                    <button class="btn btn-sm btn-light btn-active-light-primary me-2 btn-editar"
+                        data-id="' . $row['id'] . '"
+                        data-customer="' . $row['customer_id'] . '"
+                        data-status="' . $row['status'] . '"
+                        data-reason="' . htmlspecialchars($row['reason']) . '">
+                        <i class="ki-outline ki-pencil fs-5"></i> Editar
+                    </button>
+                    <button class="btn btn-sm btn-light-danger btn-excluir"
+                        data-id="' . $row['id'] . '">
+                        <i class="ki-outline ki-trash fs-5"></i> Excluir
+                    </button>';
+
+                $data[] = [
+                    $row['id'],
+                    htmlspecialchars($row['cliente']),
+                    $statusHtml,
+                    htmlspecialchars($row['reason']),
+                    date("d/m/Y H:i", strtotime($row['changed_at'])),
+                    $actionsHtml,
+                    $row['customer_id'] // Adiciona customer_id para ser usado no createdRow
+                ];
+            }
+
+            $json = [
+                "draw" => (int)$draw,
+                "recordsTotal" => (int)$recordsTotal,
+                "recordsFiltered" => (int)$recordsFiltered,
+                "data" => $data
+            ];
+        } catch (PDOException $e) {
+            error_log("Erro PDO ao buscar dados de status para DataTables em App.php: " . $e->getMessage());
+            $json["error"] = "Erro ao carregar dados: " . $e->getMessage();
+            // Em caso de erro, ainda retornar um JSON válido para o DataTables
+            $json = [
+                "draw" => (int)$draw,
+                "recordsTotal" => 0,
+                "recordsFiltered" => 0,
+                "data" => [],
+                "error" => $json["error"]
+            ];
+        }
+
+        echo json_encode($json);
+        die(); // Garante que nenhum outro output PHP seja enviado
+    }
+
     // Equipamentos
     public function equipments(?array $data): void
     {
@@ -1112,7 +1364,6 @@ public function home(): void
         // 🔹 4. Carrega equipamentos disponíveis
         $equipments = (new \Source\Models\App\Equipment())
             ->find()
-            ->order("name ASC")
             ->fetch(true);
 
         // 🔹 5. Equipamentos já alocados (se cliente existente)
@@ -1478,7 +1729,7 @@ public function home(): void
 
         $total = $query->count();
         error_log("Total found: " . $total);
-        
+
         $tickets = $query->order("closed_at DESC, opened_at DESC")->limit($limit)->offset(($page - 1) * $limit)->fetch(true);
         error_log("Tickets returned: " . count($tickets ?: []));
         $pages = ceil($total / $limit);
@@ -1567,10 +1818,10 @@ public function home(): void
         // Dados do formulário
         $customerId = (int)($data["customer_id"] ?? 0);
         $employeeId = !empty($data["employee_id"]) ? (int)$data["employee_id"] : null;
-    $title = trim($data["title"] ?? "");
+        $title = trim($data["title"] ?? "");
         $category = $data["category"] ?? "technical";
         $priority = $data["priority"] ?? "low";
-    $description = trim($data["description"] ?? "");
+        $description = trim($data["description"] ?? "");
         $status = $data["status"] ?? "open";
 
         // Validações básicas
@@ -1603,7 +1854,7 @@ public function home(): void
 
         // Atualiza/cria ticket
         $isNew = empty($ticket->id);
-        
+
         $ticket->customer_id = $customerId;
         $ticket->employee_id = $employeeId;
         $ticket->title = $title;
@@ -1845,11 +2096,11 @@ public function home(): void
             ob_clean();
         }
         header('Content-Type: application/json');
-        
+
         error_log("=== addTicketComment called ===");
         error_log("Data received: " . print_r($data, true));
         error_log("POST data: " . print_r($_POST, true));
-        
+
         $json = ["success" => false];
 
         // Support both route formats: /chamado/comentario/adicionar and /chamado/{id}/comentario
@@ -1878,7 +2129,7 @@ public function home(): void
         // Verifica se o usuário está autenticado
         $account = Auth::account();
         error_log("Account authenticated: " . ($account ? "Yes (ID: {$account->id})" : "No"));
-        
+
         if (!$account || !$account->id) {
             error_log("ERROR: User not authenticated");
             $json["message"] = "Usuário não autenticado.";
@@ -1933,11 +2184,11 @@ public function home(): void
     {
         // Log para debug
         error_log("getTicketComments called with data: " . print_r($data, true));
-        
+
         // Verificar autenticação
         $account = Auth::account();
         error_log("Account: " . ($account ? "Authenticated (ID: {$account->id})" : "Not authenticated"));
-        
+
         if (!$account) {
             error_log("ERROR: User not authenticated");
             echo json_encode(["success" => false, "error" => "Não autenticado"]);
@@ -1957,7 +2208,7 @@ public function home(): void
             // Verifica se o usuário atual é um funcionário
             $currentUserIsEmployee = (new \Source\Models\App\Employee())->find("user_id = :uid", "uid={$account->id}")->fetch();
             $isClientView = !$currentUserIsEmployee; // Se não for funcionário, é cliente
-            
+
             $comments = (new TicketComment())
                 ->find("ticket_id = :tid", "tid={$ticketId}")
                 ->order("created_at ASC")
@@ -1972,10 +2223,10 @@ public function home(): void
                     if ($isClientView && $comment->is_internal == 1) {
                         continue; // Pula comentários internos para clientes
                     }
-                    
+
                     $user = $comment->user();
                     $person = $user ? $user->person() : null;
-                    
+
                     // Verifica se é funcionário baseado no contexto salvo
                     // Se não tiver contexto salvo, usa a verificação pela tabela employee (retrocompatibilidade)
                     $isEmployee = false;
@@ -2016,7 +2267,7 @@ public function home(): void
             ob_clean();
         }
         header('Content-Type: application/json');
-        
+
         $json = [];
 
         // Support both route formats: /chamado/anexo/upload and /chamado/{id}/anexo
@@ -2089,7 +2340,7 @@ public function home(): void
         if (!$attachment->save()) {
             // Remove arquivo se falhar ao salvar no banco
             $upload->remove($uploadPath);
-            
+
             $json["message"] = $attachment->message()->toast()->render();
             echo json_encode($json);
             exit;
@@ -2125,11 +2376,11 @@ public function home(): void
     {
         error_log("=== getTicketAttachments called ===");
         error_log("Data received: " . print_r($data, true));
-        
+
         // Verificar autenticação
         $account = Auth::account();
         error_log("Account authenticated: " . ($account ? "Yes (ID: {$account->id})" : "No"));
-        
+
         if (!$account) {
             echo json_encode(["success" => false, "error" => "Não autenticado"]);
             return;
@@ -2157,7 +2408,7 @@ public function home(): void
                     error_log("Processing attachment ID: {$attachment->id}, filename: {$attachment->filename}");
                     $user = $attachment->user();
                     $person = $user ? $user->person() : null;
-                    
+
                     // Verifica contexto (admin panel = funcionário, client portal = cliente)
                     $isEmployee = false;
                     if (isset($attachment->context) && $attachment->context === 'admin') {
@@ -2199,10 +2450,10 @@ public function home(): void
             ob_clean();
         }
         header('Content-Type: application/json');
-        
+
         error_log("=== deleteTicketAttachment called ===");
         error_log("Data received: " . print_r($data, true));
-        
+
         $json = [];
 
         $attachmentId = (int)($data["id"] ?? 0);
@@ -2226,7 +2477,7 @@ public function home(): void
         }
 
         error_log("Attempting to delete attachment: " . $attachment->filename);
-        
+
         if (!$attachment->destroyWithFile()) {
             error_log("Failed to delete attachment");
             $json["success"] = false;
@@ -2313,7 +2564,7 @@ public function home(): void
 
         // Get customer for current user using person_id
         $customer = (new \Source\Models\App\Customer())->find("person_id = :id", "id={$account->person_id}")->fetch();
-        
+
         if (!$customer) {
             $this->message->warning("Você precisa ser um cliente para acessar os chamados.")->flash();
             redirect("/app");
@@ -2372,7 +2623,7 @@ public function home(): void
 
         // Get customer for current user using person_id
         $customer = (new \Source\Models\App\Customer())->find("person_id = :id", "id={$account->person_id}")->fetch();
-        
+
         if (!$customer) {
             $json["message"] = "Você precisa ser um cliente para abrir chamados.";
             echo json_encode($json);
@@ -2411,7 +2662,7 @@ public function home(): void
                 null,
                 "Chamado criado pelo cliente"
             );
-            
+
             $json["success"] = true;
             $json["message"] = "Chamado aberto com sucesso! Protocolo: #" . str_pad($ticket->id, 6, '0', STR_PAD_LEFT);
         } else {
@@ -2420,7 +2671,7 @@ public function home(): void
             if ($ticket->fail()) {
                 $error = $ticket->fail()->getMessage();
                 $json["error_details"] = $error;
-                
+
                 // Se for erro de constraint (duplicate), tenta recuperar o ticket criado
                 if (str_contains($error, "Duplicate") || str_contains($error, "duplicate")) {
                     try {
@@ -2432,7 +2683,7 @@ public function home(): void
                                 AND category = :category 
                                 ORDER BY opened_at DESC 
                                 LIMIT 1";
-                        
+
                         $statement = $connect->prepare($sql);
                         $statement->execute([
                             ':customer_id' => $customer->person_id,
@@ -2440,7 +2691,7 @@ public function home(): void
                             ':description' => $description,
                             ':category' => $category
                         ]);
-                        
+
                         if ($statement->rowCount() > 0) {
                             $result = $statement->fetch(\PDO::FETCH_ASSOC);
                             $json["success"] = true;
@@ -2465,7 +2716,7 @@ public function home(): void
     public function viewMyTicket(?array $data): void
     {
         $ticketId = $data['id'] ?? null;
-        
+
         if (!$ticketId) {
             $this->message->error("Chamado não encontrado.")->flash();
             redirect("/app/meus-chamados");
@@ -2483,7 +2734,7 @@ public function home(): void
 
         // Get customer for current user
         $customer = (new \Source\Models\App\Customer())->find("person_id = :id", "id={$account->person_id}")->fetch();
-        
+
         if (!$customer) {
             $this->message->warning("Você precisa ser um cliente para acessar os chamados.")->flash();
             redirect("/app");
@@ -2505,134 +2756,133 @@ public function home(): void
     }
 
 
-/**
- * Exibe a página de Contato/Orçamento para o cliente
- * @return void
- */
-public function contact(): void
-{
-    // Renderiza a view que criaremos no Passo 4
-    $this->renderPage("contact/main", [
-        "active"   => "contact",
-        "title"    => "Solicitar Orçamento Personalizado",
-        "subtitle" => "Entre em contato com nossa equipe comercial.",
-    ]);
-}
+    /**
+     * Exibe a página de Contato/Orçamento para o cliente
+     * @return void
+     */
+    public function contact(): void
+    {
+        // Renderiza a view que criaremos no Passo 4
+        $this->renderPage("contact/main", [
+            "active"   => "contact",
+            "title"    => "Solicitar Orçamento Personalizado",
+            "subtitle" => "Entre em contato com nossa equipe comercial.",
+        ]);
+    }
 
-// No source/App/App.php, verifique se você tem 'use Source\Models\Auth;'
+    // No source/App/App.php, verifique se você tem 'use Source\Models\Auth;'
 
-// No topo do App.php, se tiver, remova todos os 'use' statements que eu passei (exceto Auth).
-// Vamos usar o FQN (caminho completo) para depurar a raiz do erro.
+    // No topo do App.php, se tiver, remova todos os 'use' statements que eu passei (exceto Auth).
+    // Vamos usar o FQN (caminho completo) para depurar a raiz do erro.
 
-public function upgradePlan(array $data): void
-{
-    try {
-        $userId = Auth::account()->id;
-        $newPlanId = (int)($data['plan'] ?? 0);
+    public function upgradePlan(array $data): void
+    {
+        try {
+            $userId = Auth::account()->id;
+            $newPlanId = (int)($data['plan'] ?? 0);
 
-        // 1. Busca o Contrato Atual
-        $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
+            // 1. Busca o Contrato Atual
+            $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
 
-        if (!$currentContract) {
-            $this->message->error("Cliente sem contrato ativo. Não é possível realizar o upgrade.")->toast()->flash();
+            if (!$currentContract) {
+                $this->message->error("Cliente sem contrato ativo. Não é possível realizar o upgrade.")->toast()->flash();
+                redirect("/app");
+                return;
+            }
+
+            // 2. Busca Planos
+            $currentPlan = $currentContract->plan();
+            $newPlan = (new Plan())->findById($newPlanId);
+
+            if (!$currentPlan || !$newPlan) {
+                $this->message->error("O plano selecionado é inválido. Tente novamente.")->toast()->flash();
+                redirect("/app");
+                return;
+            }
+
+            // 3. VALIDAÇÃO: Garante que é um UPGRADE (preço superior)
+            if ($newPlan->price <= $currentPlan->price) {
+                $this->message->warning("Você deve selecionar um plano de valor superior para realizar um upgrade.")->toast()->flash();
+                redirect("/app");
+                return;
+            }
+
+            // 4. Redireciona para a tela de pagamento / simulação.
+            redirect(url("/app/payment/plan/{$newPlanId}"));
+        } catch (\Throwable $e) {
+            $this->message->error("Ocorreu um erro inesperado. Tente novamente.")->toast()->flash();
+            redirect("/app");
+        }
+    }
+
+    public function paymentSimulate(array $data): void
+    {
+        $planId = (int)($data['planId'] ?? 0);
+        $newPlan = (new \Source\Models\App\Plan())->findById($planId);
+
+        if (!$newPlan) {
+            $this->message->error("Plano de upgrade inválido.")->toast()->flash();
             redirect("/app");
             return;
         }
 
-        // 2. Busca Planos
-        $currentPlan = $currentContract->plan(); 
-        $newPlan = (new Plan())->findById($newPlanId); 
-        
-        if (!$currentPlan || !$newPlan) {
-             $this->message->error("O plano selecionado é inválido. Tente novamente.")->toast()->flash();
-             redirect("/app");
-             return;
-        }
-        
-        // 3. VALIDAÇÃO: Garante que é um UPGRADE (preço superior)
-        if ($newPlan->price <= $currentPlan->price) {
-            $this->message->warning("Você deve selecionar um plano de valor superior para realizar um upgrade.")->toast()->flash();
-            redirect("/app");
-            return;
-        }
-
-        // 4. Redireciona para a tela de pagamento / simulação.
-        redirect(url("/app/payment/plan/{$newPlanId}"));
-
-    } catch (\Throwable $e) {
-        $this->message->error("Ocorreu um erro inesperado. Tente novamente.")->toast()->flash();
-        redirect("/app");
+        $this->renderPage("plans/payment", [ // Nova View que vamos criar
+            "active"   => "home",
+            "title"    => "Simulação de Pagamento",
+            "subtitle" => "Conclua o pagamento para ativar o upgrade.",
+            "newPlan"  => $newPlan
+        ]);
     }
-}
-
-public function paymentSimulate(array $data): void
-{
-    $planId = (int)($data['planId'] ?? 0);
-    $newPlan = (new \Source\Models\App\Plan())->findById($planId);
-
-    if (!$newPlan) {
-        $this->message->error("Plano de upgrade inválido.")->toast()->flash();
-        redirect("/app");
-        return;
-    }
-
-    $this->renderPage("plans/payment", [ // Nova View que vamos criar
-        "active"   => "home",
-        "title"    => "Simulação de Pagamento",
-        "subtitle" => "Conclua o pagamento para ativar o upgrade.",
-        "newPlan"  => $newPlan
-    ]);
-}
 
 
 // No source/App/App.php
 
-/**
- * [ETAPA 3] - Processa a simulação de pagamento e atualiza o contrato no DB.
- */
-public function upgradeProcess(array $data): void
-{
-    $userId = Auth::account()->id;
-    $newPlanId = (int)($data['planId'] ?? 0);
+    /**
+     * [ETAPA 3] - Processa a simulação de pagamento e atualiza o contrato no DB.
+     */
+    public function upgradeProcess(array $data): void
+    {
+        $userId = Auth::account()->id;
+        $newPlanId = (int)($data['planId'] ?? 0);
 
-    // 1. Busca o contrato atual e o novo plano (USANDO NOME CURTO: Contract e Plan)
-    $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
-    $newPlan = (new Plan())->findById($newPlanId);
+        // 1. Busca o contrato atual e o novo plano (USANDO NOME CURTO: Contract e Plan)
+        $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
+        $newPlan = (new Plan())->findById($newPlanId);
 
-    if (!$currentContract || !$newPlan) {
-        $this->message->error("Falha ao localizar os dados do plano ou contrato. Tente o upgrade novamente.")->toast()->flash();
-        redirect("/app");
-        return;
+        if (!$currentContract || !$newPlan) {
+            $this->message->error("Falha ao localizar os dados do plano ou contrato. Tente o upgrade novamente.")->toast()->flash();
+            redirect("/app");
+            return;
+        }
+
+        // 2. Atualização do Contrato (Simulação de Sucesso)
+        $currentContract->plan_id = $newPlanId;
+
+        if (!$currentContract->save()) {
+            // Mensagem de erro mais robusta
+            $errorMsg = $currentContract->message()->getText() ?? "Erro desconhecido ao salvar o novo plano. Contate o suporte.";
+            $this->message->error("Erro ao salvar o novo plano: " . $errorMsg)->toast()->flash();
+            redirect("/app");
+            return;
+        }
+
+        // 3. Sucesso! Redireciona para a tela final de sucesso.
+        $this->message->success("Parabéns! O seu plano foi atualizado para: {$newPlan->name}!")->toast()->flash();
+        redirect(url("/app/upgrade/success"));
     }
-    
-    // 2. Atualização do Contrato (Simulação de Sucesso)
-    $currentContract->plan_id = $newPlanId;
-    
-    if (!$currentContract->save()) {
-        // Mensagem de erro mais robusta
-        $errorMsg = $currentContract->message()->getText() ?? "Erro desconhecido ao salvar o novo plano. Contate o suporte.";
-        $this->message->error("Erro ao salvar o novo plano: " . $errorMsg)->toast()->flash();
-        redirect("/app");
-        return;
-    }  
 
-    // 3. Sucesso! Redireciona para a tela final de sucesso.
-    $this->message->success("Parabéns! O seu plano foi atualizado para: {$newPlan->name}!")->toast()->flash();
-    redirect(url("/app/upgrade/success"));
-}
-
-/**
- * Exibe a página de sucesso após o upgrade simulado
- */
-public function upgradeSuccess(): void
-{
-    // A view 'plans/success' precisa ser criada na pasta themes/app/plans/
-    $this->renderPage("plans/success", [ 
-        "active"   => "home",
-        "title"    => "Upgrade Concluído",
-        "subtitle" => "Seu novo plano já está ativo!"
-    ]);
-}
+    /**
+     * Exibe a página de sucesso após o upgrade simulado
+     */
+    public function upgradeSuccess(): void
+    {
+        // A view 'plans/success' precisa ser criada na pasta themes/app/plans/
+        $this->renderPage("plans/success", [
+            "active"   => "home",
+            "title"    => "Upgrade Concluído",
+            "subtitle" => "Seu novo plano já está ativo!"
+        ]);
+    }
 
 
     /** APP | Logout */
