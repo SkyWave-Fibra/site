@@ -30,7 +30,7 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="index.html" class="menu-link active">
+                                            <a href="<?= url("app/plano") ?>" class="menu-link active">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-element-11 text-primary fs-1"></i>
                                                 </span>
@@ -68,7 +68,7 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="dashboards/projects.html" class="menu-link">
+                                            <a href="<?= url("app/meus-chamados") ?>" class="menu-link">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-abstract-44 text-info fs-1"></i>
                                                 </span>
@@ -87,7 +87,7 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="dashboards/marketing.html" class="menu-link">
+                                            <a href="<?= url("/app/status") ?>" class="menu-link">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-chart-simple text-gray-900 fs-1"></i>
                                                 </span>
@@ -139,6 +139,8 @@
                 <!--end:Menu sub-->
             </div>
             <!--end:Menu item-->
+
+            <?php /* DESNECESSÁRIO
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" data-kt-menu-offset="22,0" class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                 <!--begin:Menu link-->
@@ -180,6 +182,7 @@
                 <!--end:Menu sub-->
             </div>
             <!--end:Menu item-->
+            */ ?>
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" data-kt-menu-offset="-400,0" class="<?= isset($activeMenu) && $activeMenu == "admin" ? "here" : "" ?> menu-item menu-lg-down-accordion me-0 me-lg-2">
                 <!--begin:Menu link-->

@@ -1,39 +1,75 @@
 <?php $this->layout("_theme"); ?>
 
-<div class="card">
-    <div class="card-header border-0 pt-6">
-        <!-- Mantendo a variável $title para o título da página -->
-        <h2 class="card-title"><?= $title ?? "Canais de Atendimento Skywave Fibra"; ?></h2>
-    </div>
-    <div class="card-body pt-0">
-        <p class="fs-4 fw-semibold text-muted">
-            Para solicitar um plano personalizado, discutir suas necessidades empresariais ou entrar em contato direto com a equipe, utilize os canais abaixo.
+<div class="container py-10">
+    <div class="text-center mb-10">
+        <h1 class="fw-bold text-primary mb-3">
+            <?= $title ?? "Canais de Atendimento Skywave Fibra"; ?>
+        </h1>
+        <p class="fs-5 text-muted mx-auto" style="max-width: 700px;">
+            Entre em contato com nossa equipe para solicitar um plano personalizado, tirar dúvidas ou receber suporte.
         </p>
+    </div>
 
-        <div class="d-flex flex-column gap-5 mt-8">
-            
-            <!-- WhatsApp -->
-            <a href="https://wa.me/5575987092386" target="_blank" class="btn btn-lg btn-success w-lg-250px">
-                <i class="ki-outline ki-whatsapp fs-2 me-3"></i> WhatsApp: (75) 8709-2386
+    <div class="row g-6 justify-content-center">
+        <!-- WhatsApp -->
+        <div class="col-md-4 col-sm-6">
+            <a href="https://wa.me/5575987092386" target="_blank" class="text-decoration-none">
+                <div class="card border-0 shadow-sm hover-elevate-up transition bg-success-subtle text-center py-6">
+                    <div class="fs-1 text-success mb-3">
+                        <i class="ki-outline ki-whatsapp"></i>
+                    </div>
+                    <h4 class="fw-bold text-success">WhatsApp</h4>
+                    <p class="text-muted fs-6 mb-0">(75) 8709-2386</p>
+                </div>
             </a>
-            
-            
-            <!-- Instagram -->
-            <a href="https://instagram.com/skywave_fibra" target="_blank" class="btn btn-lg btn-light-danger w-lg-250px">
-                <i class="ki-outline ki-instagram fs-2 me-3"></i> Instagram: @skywave_fibra
-            </a>
-            
-            <!-- Facebook -->
-            <a href="https://facebook.com/SkywaveFibra" target="_blank" class="btn btn-lg btn-light-primary w-lg-250px">
-                <i class="ki-outline ki-facebook fs-2 me-3"></i> Facebook: Skywave Fibra
-            </a>
+        </div>
 
-  
-            
+        <!-- Instagram -->
+        <div class="col-md-4 col-sm-6">
+            <a href="https://instagram.com/skywave_fibra" target="_blank" class="text-decoration-none">
+                <div class="card border-0 shadow-sm hover-elevate-up transition bg-light-danger text-center py-6">
+                    <div class="fs-1 text-danger mb-3">
+                        <i class="ki-outline ki-instagram"></i>
+                    </div>
+                    <h4 class="fw-bold text-danger">Instagram</h4>
+                    <p class="text-muted fs-6 mb-0">@skywave_fibra</p>
+                </div>
+            </a>
         </div>
-        
-        <div class="mt-10">
-            <a href="<?= url("app") ?>" class="btn btn-light">Voltar ao Dashboard</a>
+
+        <!-- Facebook -->
+        <div class="col-md-4 col-sm-6">
+            <a href="https://facebook.com/SkywaveFibra" target="_blank" class="text-decoration-none">
+                <div class="card border-0 shadow-sm hover-elevate-up transition bg-light-primary text-center py-6">
+                    <div class="fs-1 text-primary mb-3">
+                        <i class="ki-outline ki-facebook"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary">Facebook</h4>
+                    <p class="text-muted fs-6 mb-0">Skywave Fibra</p>
+                </div>
+            </a>
         </div>
+    </div>
+
+    <div class="text-center mt-10">
+        <a href="<?= url("app") ?>" class="btn btn-outline-secondary px-6 py-3">
+            <i class="ki-outline ki-arrow-left fs-3 me-2"></i> Voltar ao Dashboard
+        </a>
     </div>
 </div>
+
+<style>
+    .hover-elevate-up {
+        transition: all 0.3s ease;
+        border-radius: 16px;
+    }
+
+    .hover-elevate-up:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .bg-success-subtle {
+        background-color: #e6f8ec !important;
+    }
+</style>

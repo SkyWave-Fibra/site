@@ -32,7 +32,8 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 	<!--end::Fonts-->
 	<!--begin::Vendor Stylesheets(used for this page only)-->
 	<link href="assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css" />
-	<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+	<!-- Carrega o DataTables CSS principal de um CDN -->
+	<link href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
 	<!--end::Vendor Stylesheets-->
 	<!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
 	<link href="assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -47,6 +48,9 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 <!--begin::Body-->
 
 <body id="kt_app_body" data-kt-app-header-fixed-mobile="true" data-kt-app-toolbar-enabled="true" class="app-default">
+
+	<!-- Adicionado jQuery explicitamente para garantir o carregamento antes de outros scripts -->
+	<script src="<?= url("/shared/assets/libs/jquery/dist/jquery.min.js") ?>"></script>
 
 	<!--begin::Page loading(append to body)-->
 	<div class="page-loader flex-column bg-dark bg-opacity-25">
@@ -2915,10 +2919,10 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 					</div>
 					<div class="d-flex flex-column">
 		
-                    <div class="nav-group nav-group-outline mx-auto" data-kt-buttons="true">
+                    <!-- <div class="nav-group nav-group-outline mx-auto" data-kt-buttons="true">
                         <button class="btn btn-color-gray-500 btn-active btn-active-secondary px-6 py-3 me-2 active" data-kt-plan="month">Mensal</button>
                         <button class="btn btn-color-gray-500 btn-active btn-active-secondary px-6 py-3" data-kt-plan="annual">Anual</button>
-                    </div>
+                    </div> -->
                     <div class="row mt-10">
                         <div class="col-lg-6 mb-10 mb-lg-0">
                             <div class="nav flex-column">
@@ -2966,7 +2970,7 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
                                             <input class="form-check-input" type="radio" name="plan" value="custom" />
                                         </div>
                                         <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center fs-2 fw-bold flex-wrap">Custom</div>
+                                            <div class="d-flex align-items-center fs-2 fw-bold flex-wrap">Link Dedicado</div>
                                             <div class="fw-semibold opacity-75">Solicitar uma licença personalizada</div>
                                         </div>
                                         </div>
@@ -3873,7 +3877,8 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 	<script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
 	<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesLow.js"></script>
 	<script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasLow.js"></script>
-	<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+	<!-- Carrega o DataTables JS principal de um CDN -->
+	<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 	<!--end::Vendors Javascript-->
 	<!--begin::Custom Javascript(used for this page only)-->
 	<script src="assets/js/widgets.bundle.js"></script>

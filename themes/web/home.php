@@ -678,11 +678,11 @@
                                         <div class="w-100 d-flex flex-column flex-center rounded-3 bg-body py-15 px-10">
                                             <!--begin::Heading-->
                                             <div class="mb-7 text-center">
-                                                <h1 class="text-gray-900 mb-5 fw-boldest">Plano Básico</h1>
+                                                <h1 class="text-gray-900 mb-5 fw-boldest">Plano 100Mb</h1>
                                                 <div class="text-gray-500 fw-semibold mb-5">Ideal para uso diário</div>
                                                 <div class="text-center">
                                                     <span class="mb-2 text-primary">R$</span>
-                                                    <span class="fs-3x fw-bold text-primary" data-kt-plan-price-month="89">89</span>
+                                                    <span class="fs-3x fw-bold text-primary" data-kt-plan-price-month="89">55</span>
                                                     <span class="fs-7 fw-semibold opacity-50">/ mês</span>
                                                 </div>
                                             </div>
@@ -703,7 +703,7 @@
                                                 </div>
                                             </div>
                                             <!--end::Features-->
-                                            <a href="#" class="btn btn-primary">Assinar</a>
+                                            <a href="<?= url("entrar") ?>" class="btn btn-primary">Assinar</a>
                                         </div>
                                         <!--end::Option-->
                                     </div>
@@ -715,17 +715,17 @@
                                     <div class="d-flex h-100 align-items-center">
                                         <div class="w-100 d-flex flex-column flex-center rounded-3 bg-primary py-20 px-10">
                                             <div class="mb-7 text-center">
-                                                <h1 class="text-white mb-5 fw-boldest">Plano Família</h1>
+                                                <h1 class="text-white mb-5 fw-boldest">Plano 500Mb</h1>
                                                 <div class="text-white opacity-75 fw-semibold mb-5">Perfeito para vários dispositivos</div>
                                                 <div class="text-center">
                                                     <span class="mb-2 text-white">R$</span>
-                                                    <span class="fs-3x fw-bold text-white" data-kt-plan-price-month="129">129</span>
+                                                    <span class="fs-3x fw-bold text-white" data-kt-plan-price-month="129">75</span>
                                                     <span class="fs-7 fw-semibold text-white opacity-75">/ mês</span>
                                                 </div>
                                             </div>
                                             <div class="w-100 mb-10">
                                                 <div class="d-flex flex-stack mb-5">
-                                                    <span class="fw-semibold fs-6 text-white opacity-75 text-start pe-3">300 Mega de Velocidade</span>
+                                                    <span class="fw-semibold fs-6 text-white opacity-75 text-start pe-3">500 Mega de Velocidade</span>
                                                     <i class="ki-outline ki-check-circle fs-1 text-white"></i>
                                                 </div>
                                                 <div class="d-flex flex-stack mb-5">
@@ -737,7 +737,7 @@
                                                     <i class="ki-outline ki-check-circle fs-1 text-white"></i>
                                                 </div>
                                             </div>
-                                            <a href="#" class="btn btn-light">Assinar</a>
+                                            <a href="<?= url("entrar") ?>" class="btn btn-light">Assinar</a>
                                         </div>
                                     </div>
                                 </div>
@@ -748,17 +748,17 @@
                                     <div class="d-flex h-100 align-items-center">
                                         <div class="w-100 d-flex flex-column flex-center rounded-3 bg-body py-15 px-10">
                                             <div class="mb-7 text-center">
-                                                <h1 class="text-gray-900 mb-5 fw-boldest">Plano Turbo</h1>
+                                                <h1 class="text-gray-900 mb-5 fw-boldest">Plano 700Mb</h1>
                                                 <div class="text-gray-500 fw-semibold mb-5">Máxima performance</div>
                                                 <div class="text-center">
                                                     <span class="mb-2 text-primary">R$</span>
-                                                    <span class="fs-3x fw-bold text-primary" data-kt-plan-price-month="199">199</span>
+                                                    <span class="fs-3x fw-bold text-primary" data-kt-plan-price-month="199">100</span>
                                                     <span class="fs-7 fw-semibold opacity-50">/ mês</span>
                                                 </div>
                                             </div>
                                             <div class="w-100 mb-10">
                                                 <div class="d-flex flex-stack mb-5">
-                                                    <span class="fw-semibold fs-6 text-gray-800 text-start pe-3">600 Mega de Velocidade</span>
+                                                    <span class="fw-semibold fs-6 text-gray-800 text-start pe-3">700 Mega de Velocidade</span>
                                                     <i class="ki-outline ki-check-circle fs-1 text-success"></i>
                                                 </div>
                                                 <div class="d-flex flex-stack mb-5">
@@ -770,7 +770,7 @@
                                                     <i class="ki-outline ki-check-circle fs-1 text-success"></i>
                                                 </div>
                                             </div>
-                                            <a href="#" class="btn btn-primary">Assinar</a>
+                                            <a href="<?= url("entrar") ?>" class="btn btn-primary">Assinar</a>
                                         </div>
                                     </div>
                                 </div>
