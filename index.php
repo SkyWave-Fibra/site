@@ -61,7 +61,7 @@ $route->group('/app');
 $route->get('/', 'App:home');
 
 // ROTA PARA STATUS DE SERVIÇO (ACESSO EM /app/status)
-$route->get('/status', 'App:serviceStatus'); 
+$route->get('/status', 'App:serviceStatus');
 $route->post('/status/save', 'App:saveServiceStatusPost');
 $route->delete('/status/delete/{id}', 'App:deleteServiceStatus');
 $route->get('/status/data', 'App:getServiceStatusData'); // Nova rota para dados do DataTables
@@ -108,9 +108,10 @@ $route->post('/users/save',         'App:saveUserPost');
 $route->post('/users/roles',        'App:saveUserRolesPost');
 
 // Planos
+$route->get("/plano", "App:customerPlan");
 $route->get('/planos', 'App:plans');
-$route->get('/plano/{id}', 'App:planForm'); 
-$route->get('/plano/novo', 'App:planForm'); 
+$route->get('/plano/{id}', 'App:planForm');
+$route->get('/plano/novo', 'App:planForm');
 $route->post('/plans/save', 'App:savePlan');
 $route->post('/upgrade/plan', 'App:upgradePlan');             // Rota para validar o Upgrade
 $route->get('/payment/plan/{planId}', 'App:paymentSimulate'); // Rota para tela de simulação
@@ -129,7 +130,10 @@ $route->get('/cliente/novo', 'App:clientForm');
 $route->post('/clientes/buscar', 'App:searchClientByCpf');
 
 // AJAX: salvar cliente / alocar equipamento / definir plano
-$route->post('/clientes/save', 'App:saveCustomer');
+$route->post('/client/save', 'App:customerSave');
+
+$route->post('/clientes/cancelar-plano', 'App:cancelPlanPost');
+
 
 // Nova Rota de Contato para Orçamento
 $route->get('/contato', 'App:contact');

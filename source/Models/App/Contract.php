@@ -14,14 +14,9 @@ class Contract extends Model
     /**
      * Contract constructor.
      */
-  public function __construct()
+    public function __construct()
     {
-        // Corrigido para 3 argumentos (Nome da Tabela, Chave Primária, Campos Obrigatórios)
-        parent::__construct(
-            "contract", 
-            ["id"], // <--- CHAVE PRIMÁRIA
-            ["customer_id", "plan_id", "start_date"]
-        );
+        parent::__construct("contract", ["id"], ["customer_id", "plan_id", "start_date"]);
     }
     /**
      * Retorna o Plano de Serviço (Model Plan) associado ao contrato

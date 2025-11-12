@@ -8,6 +8,7 @@ use Source\Models\Account;
 use Source\Models\App\Equipment;
 use Source\Models\App\Plan;
 use Source\Models\App\Contract;
+use Source\Models\App\Customer;
 use Source\Models\App\SupportTicket;
 use Source\Models\App\TicketHistory;
 use Source\Models\App\TicketComment;
@@ -1231,13 +1232,66 @@ class App extends Controller
     }
 
     // Clientes
-    public function customers(): void
+    public function customers(?array $data): void
     {
+        $session = new \Source\Core\Session();
+
+        // 🔹 1. Se for POST: salva busca e redireciona
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            $search = trim($data["search"] ?? "");
+
+            if ($search !== "") {
+                $session->set("customer_search", $search);
+            } else {
+                $session->unset("customer_search");
+            }
+
+            echo json_encode(["redirect" => url("/app/clientes")]);
+            return;
+        }
+
+        // 🔹 2. Se vier GET com ?clear=1, limpa busca
+        if (!empty($_GET["clear"])) {
+            $session->unset("customer_search");
+        }
+
+        // 🔹 3. Recupera busca persistente
+        $search = $session->has("customer_search") ? $session->customer_search : "";
+
+        // 🔹 4. Paginação
+        $page  = (int)($data["page"] ?? 1);
+        $limit = (int)($data["limit"] ?? 10);
+
+        // 🔹 5. Query base
+        $customerModel = new \Source\Models\App\Customer();
+
+        if (!empty($search)) {
+            $query = $customerModel->find(
+                "person_id IN (
+                SELECT id FROM person
+                WHERE full_name LIKE CONCAT('%', :search, '%')
+                OR document LIKE CONCAT('%', :search, '%')
+                /*!999999 NO_INDEX_MERGE */
+            )",
+                "search={$search}"
+            );
+        } else {
+            $query = $customerModel->find();
+        }
+
+        $total = $query->count();
+        $customers = $query->limit($limit)->offset(($page - 1) * $limit)->fetch(true);
+        $pages = ceil($total / $limit);
+
         $this->renderPage("customers/main", [
-            "active"      => "customers",
-            "title"       => "Clientes",
-            "subtitle"    => "Gerencie seus clientes",
-            "activeMenu"  => "admin"
+            "title"    => "Clientes",
+            "customers" => $customers,
+            "search"   => $search,
+            "page"     => $page,
+            "pages"    => $pages,
+            "limit"    => $limit,
+            "total"    => $total,
+            "activeMenu" => "clientes"
         ]);
     }
 
@@ -1284,28 +1338,50 @@ class App extends Controller
             ->find("person_id = :pid", "pid={$person->id}")
             ->fetch();
 
-        // 🔹 6. Busca o plano (usando Model Plan, se existir)
+        // 🔹 6. Busca o contrato ativo (plano)
+        $contract = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid AND status = 'active'", "cid={$person->id}")
+            ->order("id DESC")
+            ->fetch();
+
         $plan = null;
-        if ($customer && !empty($customer->plan_id)) {
+        if ($contract && !empty($contract->plan_id)) {
             $plan = (new \Source\Models\App\Plan())
-                ->findById((int)$customer->plan_id);
+                ->findById((int)$contract->plan_id);
         }
 
-        // 🔹 7. Busca os equipamentos alocados (via Model CustomerEquipment + relation manual)
-        $equipments = (new \Source\Models\App\CustomerEquipment())
-            ->find("customer_id = :cid", "cid={$person->id}")
-            ->fetch(true);
+        // 🔹 7. Busca o equipamento ativo vinculado à pessoa
+        $activeEquipmentLink = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND (end_date IS NULL OR end_date = '0000-00-00')", "cid={$person->id}")
+            ->order("id DESC")
+            ->fetch();
 
-        // 🔹 8. Adiciona o nome do equipamento a cada item (JOIN via PHP, não SQL)
-        if ($equipments) {
-            foreach ($equipments as $equipment) {
-                $eq = (new \Source\Models\App\Equipment())
-                    ->findById($equipment->equipment_id);
-                $equipment->equipment_name = $eq ? $eq->name : "Equipamento desconhecido";
+        $activeEquipment = null;
+
+        if ($activeEquipmentLink) {
+            $eq = (new \Source\Models\App\Equipment())->findById($activeEquipmentLink->equipment_id);
+            if ($eq) {
+                $activeEquipment = (object) [
+                    "equipment_id"   => $eq->id,
+                    "equipment_name" => trim(implode(" - ", array_filter([
+                        $eq->type,
+                        $eq->manufacturer,
+                        $eq->model
+                    ]))),
+                    "start_date"     => $activeEquipmentLink->start_date,
+                    "end_date"       => $activeEquipmentLink->end_date
+                ];
             }
         }
 
-        // 🔹 9. Monta resposta JSON
+        // 🔹 Também busca todos os equipamentos (para preencher o select)
+        $equipments = (new \Source\Models\App\Equipment())
+            ->find()
+            ->order("type ASC")
+            ->fetch(true);
+
+
+        // 🔹 8. Monta resposta JSON
         $json["found"] = true;
         $json["person"] = [
             "id"          => $person->id,
@@ -1324,154 +1400,354 @@ class App extends Controller
         $json["customer"] = $customer ? [
             "id"      => $customer->id ?? null,
             "status"  => $customer->status ?? null,
-            "plan_id" => $customer->plan_id ?? null,
+            "plan_id" => $contract->plan_id ?? null,
             "plan"    => $plan ? $plan->name : null
         ] : null;
 
         $json["equipments"] = $equipments ?: [];
+        $json["active_equipment"] = $activeEquipment ?: null;
 
         echo json_encode($json);
     }
 
+
     public function clientForm(?array $data): void
     {
-        // 🔹 1. Dados iniciais
-        $customer = null;
-        $person = null;
-        $account = null;
+        $personId = $data["id"] ?? null;
 
-        // 🔹 2. Se vier ID na rota, estamos editando
-        if (!empty($data["id"])) {
-            $customer = (new \Source\Models\App\Customer())
-                ->find("person_id = :pid", "pid={$data["id"]}")
-                ->fetch();
-
-            if ($customer) {
-                $person = (new \Source\Models\Person())->findById((int)$customer->person_id);
-                $account = (new \Source\Models\Account())->find("person_id = :pid", "pid={$customer->person_id}")->fetch();
-            } else {
-                $person = (new \Source\Models\Person())->findById($data["id"]);
-                $account = (new \Source\Models\Account())->find("person_id = :pid", "pid={$data["id"]}")->fetch();
-            }
-        }
-
-        // 🔹 3. Carrega planos disponíveis
+        // 🔹 1. Carrega planos e equipamentos disponíveis
         $plans = (new \Source\Models\App\Plan())
             ->find()
             ->order("price ASC")
             ->fetch(true);
 
-        // 🔹 4. Carrega equipamentos disponíveis
         $equipments = (new \Source\Models\App\Equipment())
             ->find()
+            ->order("type ASC")
             ->fetch(true);
 
-        // 🔹 5. Equipamentos já alocados (se cliente existente)
-        $customerEquipments = [];
-        if ($person) {
-            $customerEquipments = (new \Source\Models\App\CustomerEquipment())
-                ->find("customer_id = :cid", "cid={$person->id}")
-                ->fetch(true) ?? [];
+        // 🔹 2. Se foi passado um ID (edição)
+        $person = null;
+        $account = null;
+        $customer = null;
+        $activePlan = null;
+        $activeEquipment = null;
+
+        if ($personId) {
+            // Pessoa
+            $person = (new \Source\Models\Person())->findById($personId);
+
+            // Conta
+            $account = (new \Source\Models\Account())
+                ->find("person_id = :pid", "pid={$personId}")
+                ->fetch();
+
+            // Cliente
+            $customer = (new \Source\Models\App\Customer())
+                ->find("person_id = :pid", "pid={$personId}")
+                ->fetch();
+
+            // Plano ativo
+            $contract = (new \Source\Models\App\Contract())
+                ->find("customer_id = :cid AND status = 'active'", "cid={$personId}")
+                ->fetch();
+
+            if ($contract && $contract->plan_id) {
+                $activePlan = (new \Source\Models\App\Plan())->findById($contract->plan_id);
+            }
+
+            // Equipamento ativo
+            $equipmentLink = (new \Source\Models\App\CustomerEquipment())
+                ->find("customer_id = :cid AND (end_date IS NULL OR end_date = '0000-00-00')", "cid={$personId}")
+                ->fetch();
+
+            if ($equipmentLink) {
+                $eq = (new \Source\Models\App\Equipment())->findById($equipmentLink->equipment_id);
+                if ($eq) {
+                    $activeEquipment = $eq;
+                }
+            }
         }
 
-        // 🔹 6. Renderiza a página
+        // 🔹 3. Renderiza a página
         $this->renderPage("customers/form", [
-            "active"             => "customers",
-            "title"              => !empty($data["id"]) ? "Editar Cliente" : "Novo Cliente",
-            "subtitle"           => !empty($data["id"]) ? "Atualize os dados do cliente" : "Cadastrar novo cliente",
-            "customer"           => $customer,
-            "person"             => $person,
-            "account"            => $account,
-            "plans"              => $plans,
-            "equipments"         => $equipments,
-            "customerEquipments" => $customerEquipments,
-            "activeMenu"         => "admin"
+            "title"          => $personId ? "Editar Cliente" : "Associar Cliente",
+            "subtitle"       => $personId ? "Atualize o plano e equipamento" : "Associe um cliente a um plano e equipamento",
+            "plans"          => $plans,
+            "equipments"     => $equipments,
+            "person"         => $person,
+            "account"        => $account,
+            "customer"       => $customer,
+            "activePlan"     => $activePlan,
+            "activeEquipment" => $activeEquipment,
+            "activeMenu"     => "clientes"
         ]);
     }
 
-    public function saveCustomer(?array $data): void
+    public function cancelPlanPost(?array $data): void
     {
         $json = [];
 
-        // Esperamos: document, person_id (opcional), plan_id (opcional), equipments => array of equipment_id, start_date, end_date
-        $document = preg_replace("/\D/", "", $data["document"] ?? "");
-        $personId = !empty($data["person_id"]) ? (int)$data["person_id"] : null;
-        $planId   = !empty($data["plan_id"]) ? (int)$data["plan_id"] : null;
-        $equipments = $data["equipments"] ?? []; // esperar array [[equipment_id, start_date, end_date], ...]
-
-        // Verifica pessoa
-        if ($personId) {
-            $person = (new \Source\Models\Person())->findById($personId);
-            if (!$person) {
-                $json["message"] = (new \Source\Support\Message())->error("Pessoa não encontrada.")->toast()->render();
-                echo json_encode($json);
-                return;
-            }
-        } else {
-            // tenta achar por document
-            $person = (new \Source\Models\Person())->find("document = :d", "d={$document}")->fetch();
-            if (!$person) {
-                $json["message"] = (new \Source\Support\Message())->warning("Pessoa não encontrada. Crie a pessoa antes.")->toast()->render();
-                echo json_encode($json);
-                return;
-            }
-        }
-
-        // Se já existe customer?
-        $customerModel = new \Source\Models\App\Customer();
-        $customer = $customerModel->find("person_id = :pid", "pid={$person->id}")->fetch();
-
-        if (!$customer) {
-            // cria novo customer
-            $customer = new \Source\Models\App\Customer();
-            $customer->person_id = $person->id;
-        }
-
-        // atualiza campos do customer (por ex. plan_id, status)
-        if (!is_null($planId)) {
-            $customer->plan_id = $planId;
-        }
-        $customer->status = $data["customer_status"] ?? ($customer->status ?? 'active');
-
-        if (!$customer->save()) {
-            $json["message"] = $customer->message()->toast()->render();
+        $personId = (int)($data["person_id"] ?? 0);
+        if (!$personId) {
+            $json["message"] = "ID do cliente não informado.";
             echo json_encode($json);
             return;
         }
 
-        // Agora alocar equipamentos: para simplicidade, removo/insiro
-        // Você pode optar por inserir novos sem deletar. Exemplo abaixo apaga todas as alocações e recria.
-        $pdo = \Source\Core\Connect::getInstance();
-        $pdo->beginTransaction();
-        try {
-            // opcional: remover alocações antigas (se quiser sobrescrever)
-            $stmtDel = $pdo->prepare("DELETE FROM customer_equipment WHERE customer_id = :cid");
-            $stmtDel->execute(["cid" => $person->id]); // cuidado: a constraint customer_equipment_ibfk_1 usa customer_id referencing customer.person_id
-            // Inserir novas alocações
-            $stmtIns = $pdo->prepare("INSERT INTO customer_equipment (customer_id, equipment_id, start_date, end_date) VALUES (:cid, :eid, :s, :e)");
-            foreach ($equipments as $eq) {
-                $eid = (int)$eq["equipment_id"];
-                $s = !empty($eq["start_date"]) ? $eq["start_date"] : date("Y-m-d");
-                $e = !empty($eq["end_date"]) ? $eq["end_date"] : null;
-                $stmtIns->execute([
-                    "cid" => $person->id,
-                    "eid" => $eid,
-                    "s" => $s,
-                    "e" => $e
-                ]);
-            }
-            $pdo->commit();
-        } catch (\Throwable $th) {
-            $pdo->rollBack();
-            $json["message"] = (new \Source\Support\Message())->error("Falha ao alocar equipamentos: " . $th->getMessage())->toast()->render();
+        // 🔹 1. Cancela contrato ativo
+        $contract = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid AND status = 'active'", "cid={$personId}")
+            ->fetch();
+
+        if (!$contract) {
+            $json["message"] = "Nenhum contrato ativo encontrado.";
             echo json_encode($json);
             return;
         }
 
-        $json["message"] = (new \Source\Support\Message())->success("Cliente atualizado com sucesso")->toast()->render();
-        $json["redirect"] = url("/clientes"); // ou a rota que quiser
+        $contract->status = "canceled";
+        $contract->end_date = date("Y-m-d");
+        $contract->save();
+
+        // 🔹 2. Cancela automaticamente o equipamento associado
+        $equipmentLink = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND (end_date IS NULL OR end_date = '0000-00-00')", "cid={$personId}")
+            ->fetch();
+
+        if ($equipmentLink) {
+            $equipmentLink->end_date = date("Y-m-d");
+            $equipmentLink->save();
+
+            // Libera o equipamento
+            $eq = (new \Source\Models\App\Equipment())->findById($equipmentLink->equipment_id);
+            if ($eq) {
+                $eq->status = "available";
+                $eq->save();
+            }
+        }
+
+        $json["success"] = true;
+        $json["message"] = "Plano e equipamento cancelados com sucesso!";
+
         echo json_encode($json);
     }
+
+
+
+
+    public function customerSave(array $data): void
+    {
+        $personId = filter_var($data["person_id"] ?? null, FILTER_VALIDATE_INT);
+        $planId = filter_var($data["plan_id"] ?? null, FILTER_VALIDATE_INT);
+        $equipmentId = filter_var($data["equipment_id"] ?? null, FILTER_VALIDATE_INT);
+
+        if (!$personId || !$planId || !$equipmentId) {
+            $this->message->error("Selecione o cliente, o plano e o equipamento.")->flash();
+            redirect("/app/clientes");
+            return;
+        }
+
+        // 1️⃣ Garante o cliente ativo
+        $customer = (new Customer())->find("person_id = :pid", "pid={$personId}")->fetch();
+        if (!$customer) {
+            $customer = new Customer();
+            $customer->person_id = $personId;
+            $customer->status = "active";
+            $customer->save();
+        }
+
+        // 2️⃣ Cancela contratos ativos anteriores
+        $activeContracts = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid AND status = 'active'", "cid={$personId}")
+            ->fetch(true);
+
+        if ($activeContracts) {
+            foreach ($activeContracts as $ct) {
+                $ct->status = "canceled";
+                $ct->end_date = date("Y-m-d");
+                $ct->save();
+            }
+        }
+
+        // 3️⃣ Cancela equipamentos ativos anteriores
+        $activeEquipments = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND (end_date IS NULL OR end_date = '0000-00-00')", "cid={$personId}")
+            ->fetch(true);
+
+        if ($activeEquipments) {
+            foreach ($activeEquipments as $ce) {
+                $ce->end_date = date("Y-m-d");
+                $ce->save();
+
+                $oldEq = (new \Source\Models\App\Equipment())->findById((int)$ce->equipment_id);
+                if ($oldEq) {
+                    $oldEq->status = "available";
+                    $oldEq->save();
+                }
+            }
+        }
+
+        // 4️⃣ Cria novo contrato (ligado à pessoa)
+        $contract = new \Source\Models\App\Contract();
+        $contract->customer_id = $personId;
+        $contract->plan_id = $planId;
+        $contract->start_date = date("Y-m-d");
+        $contract->status = "active";
+        $contract->save();
+
+        // 5️⃣ Cria vínculo de equipamento (ligado à pessoa)
+        $customerEquipment = new \Source\Models\App\CustomerEquipment();
+        $customerEquipment->customer_id = $personId;
+        $customerEquipment->equipment_id = $equipmentId;
+        $customerEquipment->start_date = date("Y-m-d");
+        $customerEquipment->save();
+
+        // Atualiza status do novo equipamento
+        $equipment = (new \Source\Models\App\Equipment())->findById($equipmentId);
+        if ($equipment) {
+            $equipment->status = "allocated";
+            $equipment->save();
+        }
+
+        $this->message->success("Cliente associado com sucesso!")->flash();
+        $json["redirect"] = url("/app/clientes");
+        jsonResponse($json);
+    }
+
+    public function customerPlan(): void
+    {
+        $user = Auth::account();
+
+        // 1️⃣ Busca o registro do cliente vinculado à pessoa
+        $customer = (new \Source\Models\App\Customer())
+            ->find("person_id = :pid", "pid={$user->id}")
+            ->fetch();
+
+        if (!$customer) {
+            $this->message->warning("Nenhum plano ativo encontrado para seu usuário.")->flash();
+            redirect("/app");
+            return;
+        }
+
+        // 2️⃣ Busca o contrato ativo
+        $contract = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid AND status = 'active'", "cid={$customer->id}")
+            ->fetch();
+
+        // 3️⃣ Busca o plano vinculado
+        $plan = null;
+        if ($contract) {
+            $plan = (new \Source\Models\App\Plan())->findById($contract->plan_id);
+        }
+
+        // 4️⃣ Busca equipamento vinculado (opcional)
+        $equipment = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND end_date IS NULL", "cid={$customer->id}")
+            ->fetch();
+
+        if ($equipment) {
+            $equipment = (new \Source\Models\App\Equipment())->findById($equipment->equipment_id);
+        }
+
+        // 5️⃣ Renderiza view
+        $this->renderPage("customer-plan", [
+            "title" => "Meu Plano",
+            "customer" => $customer,
+            "contract" => $contract,
+            "plan" => $plan,
+            "equipment" => $equipment
+        ]);
+    }
+
+
+
+
+
+
+    // public function saveCustomer(?array $data): void
+    // {
+    //     $json = [];
+
+    //     // Esperamos: document, person_id (opcional), plan_id (opcional), equipments => array of equipment_id, start_date, end_date
+    //     $document = preg_replace("/\D/", "", $data["document"] ?? "");
+    //     $personId = !empty($data["person_id"]) ? (int)$data["person_id"] : null;
+    //     $planId   = !empty($data["plan_id"]) ? (int)$data["plan_id"] : null;
+    //     $equipments = $data["equipments"] ?? []; // esperar array [[equipment_id, start_date, end_date], ...]
+
+    //     // Verifica pessoa
+    //     if ($personId) {
+    //         $person = (new \Source\Models\Person())->findById($personId);
+    //         if (!$person) {
+    //             $json["message"] = (new \Source\Support\Message())->error("Pessoa não encontrada.")->toast()->render();
+    //             echo json_encode($json);
+    //             return;
+    //         }
+    //     } else {
+    //         // tenta achar por document
+    //         $person = (new \Source\Models\Person())->find("document = :d", "d={$document}")->fetch();
+    //         if (!$person) {
+    //             $json["message"] = (new \Source\Support\Message())->warning("Pessoa não encontrada. Crie a pessoa antes.")->toast()->render();
+    //             echo json_encode($json);
+    //             return;
+    //         }
+    //     }
+
+    //     // Se já existe customer?
+    //     $customerModel = new \Source\Models\App\Customer();
+    //     $customer = $customerModel->find("person_id = :pid", "pid={$person->id}")->fetch();
+
+    //     if (!$customer) {
+    //         // cria novo customer
+    //         $customer = new \Source\Models\App\Customer();
+    //         $customer->person_id = $person->id;
+    //     }
+
+    //     // atualiza campos do customer (por ex. plan_id, status)
+    //     if (!is_null($planId)) {
+    //         $customer->plan_id = $planId;
+    //     }
+    //     $customer->status = $data["customer_status"] ?? ($customer->status ?? 'active');
+
+    //     if (!$customer->save()) {
+    //         $json["message"] = $customer->message()->toast()->render();
+    //         echo json_encode($json);
+    //         return;
+    //     }
+
+    //     // Agora alocar equipamentos: para simplicidade, removo/insiro
+    //     // Você pode optar por inserir novos sem deletar. Exemplo abaixo apaga todas as alocações e recria.
+    //     $pdo = \Source\Core\Connect::getInstance();
+    //     $pdo->beginTransaction();
+    //     try {
+    //         // opcional: remover alocações antigas (se quiser sobrescrever)
+    //         $stmtDel = $pdo->prepare("DELETE FROM customer_equipment WHERE customer_id = :cid");
+    //         $stmtDel->execute(["cid" => $person->id]); // cuidado: a constraint customer_equipment_ibfk_1 usa customer_id referencing customer.person_id
+    //         // Inserir novas alocações
+    //         $stmtIns = $pdo->prepare("INSERT INTO customer_equipment (customer_id, equipment_id, start_date, end_date) VALUES (:cid, :eid, :s, :e)");
+    //         foreach ($equipments as $eq) {
+    //             $eid = (int)$eq["equipment_id"];
+    //             $s = !empty($eq["start_date"]) ? $eq["start_date"] : date("Y-m-d");
+    //             $e = !empty($eq["end_date"]) ? $eq["end_date"] : null;
+    //             $stmtIns->execute([
+    //                 "cid" => $person->id,
+    //                 "eid" => $eid,
+    //                 "s" => $s,
+    //                 "e" => $e
+    //             ]);
+    //         }
+    //         $pdo->commit();
+    //     } catch (\Throwable $th) {
+    //         $pdo->rollBack();
+    //         $json["message"] = (new \Source\Support\Message())->error("Falha ao alocar equipamentos: " . $th->getMessage())->toast()->render();
+    //         echo json_encode($json);
+    //         return;
+    //     }
+
+    //     $json["message"] = (new \Source\Support\Message())->success("Cliente atualizado com sucesso")->toast()->render();
+    //     $json["redirect"] = url("/clientes"); // ou a rota que quiser
+    //     echo json_encode($json);
+    // }
 
 
     // Planos
@@ -2315,8 +2591,31 @@ class App extends Controller
             exit;
         }
 
-        // Upload do arquivo
-        $uploadPath = $upload->file($file, "ticket-{$ticketId}-" . time());
+        // Aceitar qualquer tipo de arquivo: movemos manualmente para storage/uploads/tickets
+        $storageDir = "storage/uploads/tickets/" . date("Y/m/");
+
+        if (!is_dir($storageDir) && !mkdir($storageDir, 0755, true) && !is_dir($storageDir)) {
+            // Falha ao criar diretório
+            $uploadPath = null;
+        } else {
+            $ext = pathinfo($file["name"], PATHINFO_EXTENSION);
+            try {
+                $rand = bin2hex(random_bytes(6));
+            } catch (\Exception $e) {
+                $rand = substr(md5(uniqid((string)time(), true)), 0, 12);
+            }
+
+            $filename = "ticket-{$ticketId}-" . time() . "-{$rand}" . ($ext ? ".{$ext}" : "");
+            $dest = rtrim($storageDir, "/") . "/" . $filename;
+
+            if (is_uploaded_file($file["tmp_name"]) && move_uploaded_file($file["tmp_name"], $dest)) {
+                @chmod($dest, 0644);
+                // Define caminho parecido com o usado pelo Upload class (ex: storage/...)
+                $uploadPath = $dest;
+            } else {
+                $uploadPath = null;
+            }
+        }
 
         if (!$uploadPath) {
             $json["message"] = $upload->message()
@@ -2332,7 +2631,12 @@ class App extends Controller
         $attachment->user_id = Auth::account()->id;
         $attachment->filename = basename($uploadPath);
         $attachment->original_name = $file["name"];
-        $attachment->file_path = $uploadPath;
+
+        // Armazena no DB o caminho sem o prefixo "storage/" (sem a barra inicial)
+        // Ex.: storage/uploads/... => uploads/...
+        $dbPath = preg_replace('#^/?storage/#', '', $uploadPath);
+        $attachment->file_path = $dbPath;
+
         $attachment->file_size = $file["size"];
         $attachment->mime_type = $file["type"];
         $attachment->context = $data["context"] ?? $_POST["context"] ?? "client"; // 'admin' ou 'client'
@@ -2785,8 +3089,8 @@ class App extends Controller
             $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
 
             if (!$currentContract) {
-                $this->message->error("Cliente sem contrato ativo. Não é possível realizar o upgrade.")->toast()->flash();
-                redirect("/app");
+                $json["message"] = $this->message->error("Cliente sem contrato ativo. Não é possível realizar o upgrade.")->toast()->render();
+                jsonResponse($json);
                 return;
             }
 
@@ -2795,20 +3099,21 @@ class App extends Controller
             $newPlan = (new Plan())->findById($newPlanId);
 
             if (!$currentPlan || !$newPlan) {
-                $this->message->error("O plano selecionado é inválido. Tente novamente.")->toast()->flash();
-                redirect("/app");
+                $json["message"] = $this->message->error("O plano selecionado é inválido. Tente novamente.")->toast()->render();
+                jsonResponse($json);
                 return;
             }
 
             // 3. VALIDAÇÃO: Garante que é um UPGRADE (preço superior)
             if ($newPlan->price <= $currentPlan->price) {
-                $this->message->warning("Você deve selecionar um plano de valor superior para realizar um upgrade.")->toast()->flash();
-                redirect("/app");
+                $json["message"] = $this->message->warning("Você deve selecionar um plano superior para realizar um upgrade.")->toast()->render();
+                jsonResponse($json);
                 return;
             }
 
             // 4. Redireciona para a tela de pagamento / simulação.
-            redirect(url("/app/payment/plan/{$newPlanId}"));
+            $json["redirect"] = url("/app/payment/plan/{$newPlanId}");
+            jsonResponse($json);
         } catch (\Throwable $e) {
             $this->message->error("Ocorreu um erro inesperado. Tente novamente.")->toast()->flash();
             redirect("/app");
@@ -2850,8 +3155,8 @@ class App extends Controller
         $newPlan = (new Plan())->findById($newPlanId);
 
         if (!$currentContract || !$newPlan) {
-            $this->message->error("Falha ao localizar os dados do plano ou contrato. Tente o upgrade novamente.")->toast()->flash();
-            redirect("/app");
+            $json["message"] = $this->message->error("Falha ao localizar os dados do plano ou contrato. Tente o upgrade novamente.")->toast()->render();
+            jsonResponse($json);
             return;
         }
 
@@ -2861,14 +3166,16 @@ class App extends Controller
         if (!$currentContract->save()) {
             // Mensagem de erro mais robusta
             $errorMsg = $currentContract->message()->getText() ?? "Erro desconhecido ao salvar o novo plano. Contate o suporte.";
-            $this->message->error("Erro ao salvar o novo plano: " . $errorMsg)->toast()->flash();
-            redirect("/app");
+            $json["message"] = $this->message->error("Erro ao salvar o novo plano: " . $errorMsg)->toast()->render();
+            jsonResponse($json);
             return;
         }
 
         // 3. Sucesso! Redireciona para a tela final de sucesso.
         $this->message->success("Parabéns! O seu plano foi atualizado para: {$newPlan->name}!")->toast()->flash();
-        redirect(url("/app/upgrade/success"));
+        $json["redirect"] = url("/app/upgrade/success");
+        jsonResponse($json);
+        return;
     }
 
     /**

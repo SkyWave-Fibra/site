@@ -11,7 +11,7 @@
         </button>
     </div>
 
-    <form id="equipmentForm" method="post" action="<?= url('/app/equipamentos/salvar'); ?>" class="form">
+    <form id="equipmentForm" method="post" action="<?= url('/app/equipment/save'); ?>" class="form">
         <div class="card-body p-9">
             <input type="hidden" name="id" value="<?= $equipment->id ?? ''; ?>">
 

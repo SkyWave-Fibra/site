@@ -2919,10 +2919,10 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
 					</div>
 					<div class="d-flex flex-column">
 		
-                    <div class="nav-group nav-group-outline mx-auto" data-kt-buttons="true">
+                    <!-- <div class="nav-group nav-group-outline mx-auto" data-kt-buttons="true">
                         <button class="btn btn-color-gray-500 btn-active btn-active-secondary px-6 py-3 me-2 active" data-kt-plan="month">Mensal</button>
                         <button class="btn btn-color-gray-500 btn-active btn-active-secondary px-6 py-3" data-kt-plan="annual">Anual</button>
-                    </div>
+                    </div> -->
                     <div class="row mt-10">
                         <div class="col-lg-6 mb-10 mb-lg-0">
                             <div class="nav flex-column">
@@ -2970,7 +2970,7 @@ $modal_plans = (new Plan())->find()->order("price ASC")->fetch(true);
                                             <input class="form-check-input" type="radio" name="plan" value="custom" />
                                         </div>
                                         <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center fs-2 fw-bold flex-wrap">Custom</div>
+                                            <div class="d-flex align-items-center fs-2 fw-bold flex-wrap">Link Dedicado</div>
                                             <div class="fw-semibold opacity-75">Solicitar uma licença personalizada</div>
                                         </div>
                                         </div>

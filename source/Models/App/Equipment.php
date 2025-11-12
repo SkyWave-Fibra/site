@@ -10,4 +10,13 @@ class Equipment extends Model
     {
         parent::__construct("equipment", ["id"], ["type"]);
     }
+
+    /**
+     * Retorna uma breve descrição do equipamento
+     */
+    public function summary(): string
+    {
+        $parts = array_filter([$this->type, $this->manufacturer, $this->model, $this->serial_number]);
+        return implode(" - ", $parts);
+    }
 }
