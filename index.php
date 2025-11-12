@@ -53,6 +53,7 @@ $route->get('/privacidade', 'Web:privacy');
 // $route->get('/status', 'Web:status');
 
 
+
 /**
  * APP
  */
@@ -108,9 +109,14 @@ $route->post('/users/roles',        'App:saveUserRolesPost');
 
 // Planos
 $route->get('/planos', 'App:plans');
-$route->get('/plano/{id}', 'App:planForm'); // editar plano
-$route->get('/plano/novo', 'App:planForm'); // novo plano
+$route->get('/plano/{id}', 'App:planForm'); 
+$route->get('/plano/novo', 'App:planForm'); 
 $route->post('/plans/save', 'App:savePlan');
+$route->post('/upgrade/plan', 'App:upgradePlan');             // Rota para validar o Upgrade
+$route->get('/payment/plan/{planId}', 'App:paymentSimulate'); // Rota para tela de simulação
+$route->post('/upgrade/process', 'App:upgradeProcess');       // Rota para confirmar o contrato
+$route->get('/app/contato', 'App:contact');                   // Rota de Contato
+$route->get('/upgrade/success', 'App:upgradeSuccess');
 
 // CLientes
 $route->get('/clientes', 'App:customers');
@@ -125,6 +131,44 @@ $route->post('/clientes/buscar', 'App:searchClientByCpf');
 // AJAX: salvar cliente / alocar equipamento / definir plano
 $route->post('/clientes/save', 'App:saveCustomer');
 
+// Nova Rota de Contato para Orçamento
+$route->get('/contato', 'App:contact');
+// Chamados (Support Tickets)
+$route->get('/chamados', 'App:tickets');
+$route->get('/chamados/{page}/{limit}', 'App:tickets');
+$route->get('/chamados/historico', 'App:ticketsHistory');
+$route->get('/chamados/historico/{page}/{limit}', 'App:ticketsHistory');
+$route->get('/chamado/{id}', 'App:ticket');
+$route->get('/chamado/criar', 'App:ticket');
+$route->get('/chamado/delete/{id}', 'App:deleteTicket');
+$route->get('/chamados/dashboard', 'App:ticketsDashboard');
+
+// Client-facing ticket routes
+$route->get('/meus-chamados', 'App:myTickets');
+$route->get('/criar-chamado', 'App:createTicket');
+$route->post('/criar-chamado', 'App:createTicket');
+$route->get('/meu-chamado/{id}', 'App:viewMyTicket');
+
+// Comentários
+$route->get('/chamado/comentarios/{id}', 'App:getTicketComments');
+$route->post('/chamado/comentario/adicionar', 'App:addTicketComment');
+$route->post('/chamado/{id}/comentario', 'App:addTicketComment');
+
+// Anexos
+$route->get('/chamado/anexos/{id}', 'App:getTicketAttachments');
+$route->post('/chamado/anexo/upload', 'App:uploadTicketAttachment');
+$route->post('/chamado/{id}/anexo', 'App:uploadTicketAttachment');
+$route->post('/chamado/anexo/delete', 'App:deleteTicketAttachment');
+
+// Histórico
+$route->get('/chamado/historico/{id}', 'App:getTicketHistory');
+
+// Ações principais
+$route->post('/chamados', 'App:tickets');
+$route->post('/chamados/historico', 'App:ticketsHistory');
+$route->post('/chamado/salvar', 'App:saveTicketPost');
+$route->post('/chamado/atribuir', 'App:assignTicket');
+$route->post('/chamado/status', 'App:updateTicketStatus');
 
 
 // Perfil
