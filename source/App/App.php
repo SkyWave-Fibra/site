@@ -3478,7 +3478,7 @@ class App extends Controller
 
         try {
             $account = Auth::account();
-            $userId = $account->id;
+            $userId = $account->person_id;
             $planId = (int)($data['planId'] ?? $data['plan'] ?? 0);
 
             if (!$planId) {
@@ -3493,6 +3493,7 @@ class App extends Controller
                 jsonResponse($json);
                 return;
             }
+
 
             // Garante que exista um registro de customer para esta pessoa
             $customer = (new Customer())->find("person_id = :pid", "pid={$userId}")->fetch();

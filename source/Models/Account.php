@@ -74,7 +74,9 @@ class Account extends Model
             return false;
         }
 
-        return (new Contract())->find("customer_id = :cid AND status = 'active'", "cid={$auth->$platform}")->count() > 0;
+        $account = (new Account())->findById($auth->$platform);
+
+        return (new Contract())->find("customer_id = :cid AND status = 'active'", "cid={$account->person_id}")->count() > 0;
     }
 
     public static function isEmployee(): bool
