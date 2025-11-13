@@ -3,6 +3,9 @@
 namespace Source\Models;
 
 use Source\Core\Model;
+use Source\Core\Session;
+use Source\Models\App\Contract;
+use Source\Models\App\Employee;
 
 class Account extends Model
 {
@@ -59,6 +62,32 @@ class Account extends Model
     {
         $find = $this->find("email = :email", "email={$email}", $columns);
         return $find->fetch();
+    }
+
+    public static function isCustomer(): bool
+    {
+        $session = new Session();
+        $auth = $session->auth ?? [];
+        $platform = url();
+
+        if (!isset($auth->$platform)) {
+            return false;
+        }
+
+        return (new Contract())->find("customer_id = :cid AND status = 'active'", "cid={$auth->$platform}")->count() > 0;
+    }
+
+    public static function isEmployee(): bool
+    {
+        $session = new Session();
+        $auth = $session->auth ?? [];
+        $platform = url();
+
+        if (!isset($auth->$platform)) {
+            return false;
+        }
+
+        return (new Employee())->find("person_id = :pid AND status = 'active'", "pid={$auth->$platform}")->count() > 0;
     }
 
     // Dentro de Source\Models\Account.php
