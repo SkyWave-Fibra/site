@@ -89,7 +89,9 @@ class Account extends Model
             return false;
         }
 
-        return (new Employee())->find("person_id = :pid AND status = 'active'", "pid={$auth->$platform}")->count() > 0;
+        $account = (new Account())->findById($auth->$platform);
+
+        return (new Employee())->find("person_id = :pid AND status = 'active'", "pid={$account->person_id}")->count() > 0;
     }
 
     // Dentro de Source\Models\Account.php
