@@ -119,20 +119,7 @@
                                             <li>
                                                 <a class="dropdown-item"
                                                     href="<?= url("/app/usuario/{$account->id}"); ?>">
-                                                    Ver
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                    href="<?= url("/app/usuario/{$account->id}"); ?>">
                                                     Editar
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item text-danger"
-                                                    href="#"
-                                                    onclick="confirmDelete(<?= $account->id; ?>)">
-                                                    Excluir
                                                 </a>
                                             </li>
                                         </ul>
