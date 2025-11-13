@@ -23,7 +23,7 @@
             <!--begin::Card body-->
             <div class="card-body">
                 <!--begin::Form-->
-                <form id="ticketForm" class="form" data-action="<?= url("app/criar-chamado") ?>" novalidate>
+                <form id="ticketForm" class="form ajax-off" data-action="<?= url("app/criar-chamado") ?>" novalidate>
                     <?= csrf_input(); ?>
 
                     <div class="alert alert-info d-flex align-items-center p-5 mb-10">

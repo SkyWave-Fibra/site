@@ -16,7 +16,7 @@
 
     <!--begin::Card body-->
     <div class="card-body">
-        <form id="ticketForm" method="post" action="<?= url("/app/chamado/salvar"); ?>">
+        <form id="ticketForm" method="post" action="<?= url("/app/chamado/salvar"); ?>" class="ajax-off">
             <?= csrf_input(); ?>
             <?php if ($isEdit): ?>
                 <input type="hidden" name="id" value="<?= $ticket->id; ?>">

@@ -41,9 +41,18 @@ class Web extends Controller
             url("/shared/assets/images/share.png")
         );
 
+        // =============================
+        // TODOS OS FUNCIONÁRIOS
+        // =============================
+        $employees = (new \Source\Models\App\Employee())
+            ->find("status = 'active'")
+            ->order("RAND()")
+            ->fetch(true) ?? [];
+
         echo $this->view->render("home", [
             "head" => $head,
             "user" => $user ?? null,
+            "employees" => $employees
         ]);
     }
 

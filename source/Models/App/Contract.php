@@ -4,6 +4,7 @@ namespace Source\Models\App;
 
 use Source\Core\Model;
 use Source\Models\App\Plan; // Garante que a classe Plan seja encontrada no método plan()
+use Source\Models\Person;
 
 /**
  * Class Contract
@@ -26,5 +27,10 @@ class Contract extends Model
     {
         // Acessa a classe Plan, que está no mesmo namespace
         return (new Plan())->findById($this->plan_id);
+    }
+
+    public function Person(): ?Person
+    {
+        return (new Person())->findById($this->customer_id);
     }
 }

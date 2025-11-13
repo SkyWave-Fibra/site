@@ -45,4 +45,9 @@ class Person extends Model
             ->fetch();
         return $pa ? (new \Source\Models\App\Address())->findById($pa->address_id) : null;
     }
+
+    public function account(): Account
+    {
+        return (new Account())->find("person_id = :pid", "pid={$this->id}")->fetch();
+    }
 }

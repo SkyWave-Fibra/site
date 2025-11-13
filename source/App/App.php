@@ -9,6 +9,7 @@ use Source\Models\App\Equipment;
 use Source\Models\App\Plan;
 use Source\Models\App\Contract;
 use Source\Models\App\Customer;
+use Source\Models\App\Employee;
 use Source\Models\App\SupportTicket;
 use Source\Models\App\TicketHistory;
 use Source\Models\App\TicketComment;
@@ -88,13 +89,14 @@ class App extends Controller
      */
     public function home(): void
     {
-        // Certifique-se de que no topo do App.php não há aliases conflitando (ex: use Source\Models\App\Contract as ContractModel)
-
         $user = Auth::account();
+
+        // =============================
+        // PLANO ATUAL DO USUÁRIO LOGADO
+        // =============================
         $current_plan = null;
         $suggested_plan = null;
 
-        // USA O CAMINHO COMPLETO: \Source\Models\App\Contract()
         $contract = (new \Source\Models\App\Contract())->find(
             "customer_id = :uid AND status = 'active'",
             "uid={$user->id}"
@@ -102,23 +104,56 @@ class App extends Controller
 
         if ($contract) {
             $current_plan = $contract->plan();
-
             if ($current_plan) {
-                // USA O CAMINHO COMPLETO: \Source\Models\App\Plan()
                 $suggested_plan = (new \Source\Models\App\Plan())->find(
                     "price > :p",
                     "p={$current_plan->price}"
-                )->order("price ASC")
-                    ->fetch();
+                )->order("price ASC")->fetch();
             }
         }
 
+        // Verifica se o usuário é funcionário
+        $isEmployee = (new Employee())->find("person_id = :pid AND status = 'active'", "pid={$user->person_id}")->fetch();
+
+        // =============================
+        // TODOS OS FUNCIONÁRIOS
+        // =============================
+        $employees = (new \Source\Models\App\Employee())
+            ->find("status = 'active'")
+            ->fetch(true) ?? [];
+
+        // =============================
+        // CLIENTES AGRUPADOS POR PLANOS (USANDO CONTRACT)
+        // =============================
+        $plans = (new \Source\Models\App\Plan())->find()->fetch(true) ?? [];
+        $plansWithContracts = [];
+
+        foreach ($plans as $plan) {
+
+            // Contratos ativos deste plano
+            $contracts = (new \Source\Models\App\Contract())
+                ->find("plan_id = :pid AND status = 'active'", "pid={$plan->id}")
+                ->fetch(true) ?? [];
+
+            $plansWithContracts[] = [
+                "plan"      => $plan,
+                "contracts" => $contracts
+            ];
+        }
+
+        // =============================
+        // RENDERIZAÇÃO
+        // =============================
         $this->renderPage("home", [
-            "active"        => "home",
-            "title"         => "Início",
-            "subtitle"      => "Bem-vindo(a)!",
-            "current_plan"  => $current_plan,
-            "suggested_plan" => $suggested_plan
+            "active"            => "home",
+            "activeMenu"        => "cliente",
+            "title"             => "Início",
+            "subtitle"          => "Bem-vindo(a)!",
+            "current_plan"      => $current_plan,
+            "suggested_plan"    => $suggested_plan,
+            "employees"         => $employees,
+            "plansWithContracts" => $plansWithContracts,
+            "isEmployee"        => $isEmployee
         ]);
     }
 
@@ -429,7 +464,8 @@ class App extends Controller
             "pages"      => $pages,
             "limit"      => $limit,
             "total"      => $total,
-            "activeMenu" => "admin"
+            "activeMenu" => "admin",
+            "activesubmenu" => "admequipamentos",
         ]);
     }
 
@@ -450,12 +486,31 @@ class App extends Controller
             $isEdit = true;
         }
 
+        // Busca alocação ativa (se houver)
+        $allocation = (new \Source\Models\App\CustomerEquipment())
+            ->find(
+                "equipment_id = :id AND (end_date IS NULL OR end_date = '0000-00-00')",
+                "id={$equipment->id}"
+            )
+            ->fetch();
+
+        $allocatedCustomer = null;
+
+        if ($allocation) {
+            $allocatedCustomer = (new \Source\Models\App\Customer())
+                ->find("person_id = :pid", "pid={$allocation->customer_id}")
+                ->fetch();
+        }
+
+
         $this->renderPage("equipments/form", [
             "title"       => $isEdit ? "Editar Equipamento" : "Novo Equipamento",
             "subtitle"    => $isEdit ? "Atualize as informações do equipamento" : "Cadastre um novo equipamento",
             "equipment"   => $equipment,
             "isEdit"      => $isEdit,
-            "activeMenu"  => "admin"
+            "activeMenu"  => "admin",
+            "activesubmenu" => "admequipamentos",
+            "allocatedCustomer" => $allocatedCustomer
         ]);
     }
 
@@ -523,29 +578,67 @@ class App extends Controller
 
     public function deleteEquipment(?array $data): void
     {
+        $json = [];
+
         $id = (int)($data["id"] ?? 0);
 
         if (!$id) {
-            (new \Source\Support\Message())->error("ID inválido.")->flash();
-            redirect("/app/equipamentos");
+            (new \Source\Support\Message())
+                ->error("ID inválido.")
+                ->toast()
+                ->flash();
+
+            $json["redirect"] = url("/app/equipamentos");
+            jsonResponse($json);
             return;
         }
 
+        // 🔍 Busca equipamento
         $equipment = (new \Source\Models\App\Equipment())->findById($id);
+
         if (!$equipment) {
-            (new \Source\Support\Message())->error("Equipamento não encontrado.")->flash();
-            redirect("/app/equipamentos");
+            (new \Source\Support\Message())
+                ->error("Equipamento não encontrado.")
+                ->toast()
+                ->flash();
+
+            $json["redirect"] = url("/app/equipamentos");
+            jsonResponse($json);
             return;
         }
 
+        // 🔒 Verificar se está alocado a algum cliente
+        $linked = (new \Source\Models\App\CustomerEquipment())
+            ->find(
+                "equipment_id = :id AND (end_date IS NULL OR end_date = '0000-00-00')",
+                "id={$id}"
+            )
+            ->fetch();
+
+        if ($linked) {
+
+            (new \Source\Support\Message())
+                ->warning("Este equipamento está alocado a um cliente. Libere o equipamento antes de excluir.")
+                ->toast()
+                ->flash();
+
+            $json["redirect"] = url("/app/equipamentos");
+            jsonResponse($json);
+            return;
+        }
+
+        // 🗑️ Excluir definitivamente
         $equipment->destroy();
 
         (new \Source\Support\Message())
             ->success("Equipamento excluído com sucesso!")
+            ->toast()
             ->flash();
 
-        redirect("/app/equipamentos");
+        $json["redirect"] = url("/app/equipamentos");
+        jsonResponse($json);
     }
+
 
     // public function equipments(): void
     // {
@@ -719,7 +812,8 @@ class App extends Controller
             "pages"      => $pages,
             "limit"      => $limit,
             "total"      => $total,
-            "activeMenu" => "sistema"
+            "activeMenu" => "admin",
+            "activesubmenu" => "admfuncionarios"
         ]);
     }
 
@@ -729,6 +823,8 @@ class App extends Controller
         $employee = new \Source\Models\App\Employee();
         $person = new \Source\Models\Person();
         $employee->person = $person;
+
+
 
         if (!empty($data["id"])) {
             /** @var \Source\Models\App\Employee|null $employee */
@@ -749,7 +845,8 @@ class App extends Controller
             "subtitle"    => $isEdit ? "Atualize as informações do funcionário" : "Cadastre um novo funcionário",
             "employee"    => $employee,
             "isEdit"      => $isEdit,
-            "activeMenu"  => "sistema"
+            "activeMenu"  => "admin",
+            "activesubmenu"  => "admfuncionarios"
         ]);
     }
 
@@ -800,15 +897,15 @@ class App extends Controller
         }
 
         // 🔹 Salva pessoa
-        $person->full_name  = $fullName;
-        $person->document   = $document;
-        $person->birth_date = $birthDate;
+        // $person->full_name  = $fullName;
+        // $person->document   = $document;
+        // $person->birth_date = $birthDate;
 
-        if (!$person->save()) {
-            $json["message"] = $person->message()->toast()->render();
-            echo json_encode($json);
-            return;
-        }
+        // if (!$person->save()) {
+        //     $json["message"] = $person->message()->toast()->render();
+        //     echo json_encode($json);
+        //     return;
+        // }
 
         // 🔹 Salva funcionário
         $employee->person_id = $person->id;
@@ -872,7 +969,8 @@ class App extends Controller
             "title"      => "Associar Pessoa a Funcionário",
             "subtitle"   => "Selecione uma pessoa existente e defina as informações do vínculo como funcionário",
             "persons"    => $persons,
-            "activeMenu" => "sistema"
+            "activeMenu" => "admin",
+            "activesubmenu" => "admfuncionarios",
         ]);
     }
 
@@ -1291,7 +1389,8 @@ class App extends Controller
             "pages"    => $pages,
             "limit"    => $limit,
             "total"    => $total,
-            "activeMenu" => "clientes"
+            "activeMenu" => "admin",
+            "activesubmenu" => "admclientes",
         ]);
     }
 
@@ -1410,6 +1509,86 @@ class App extends Controller
         echo json_encode($json);
     }
 
+    public function searchClientById(?array $data): void
+    {
+        $personId = $data["person_id"] ?? null;
+
+        if (!$personId) {
+            echo json_encode(["found" => false]);
+            return;
+        }
+
+        // Reaproveita a MESMA lógica existente
+        $person = (new \Source\Models\Person())->findById($personId);
+
+        if (!$person) {
+            echo json_encode(["found" => false]);
+            return;
+        }
+
+        // 🔹 4. Busca a conta (Account)
+        $account = (new \Source\Models\Account())
+            ->find("person_id = :pid", "pid={$person->id}")
+            ->fetch();
+
+        // 🔹 5. Busca o cliente (Customer)
+        $customer = (new \Source\Models\App\Customer())
+            ->find("person_id = :pid", "pid={$person->id}")
+            ->fetch();
+
+        // 🔹 6. Busca o contrato ativo (plano)
+        $contract = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid AND status = 'active'", "cid={$person->id}")
+            ->order("id DESC")
+            ->fetch();
+
+        $plan = null;
+        if ($contract && !empty($contract->plan_id)) {
+            $plan = (new \Source\Models\App\Plan())
+                ->findById((int)$contract->plan_id);
+        }
+
+        // 🔹 7. Busca o equipamento ativo vinculado à pessoa
+        $activeEquipmentLink = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND (end_date IS NULL OR end_date = '0000-00-00')", "cid={$person->id}")
+            ->order("id DESC")
+            ->fetch();
+
+        $activeEquipment = null;
+
+        if ($activeEquipmentLink) {
+            $eq = (new \Source\Models\App\Equipment())->findById($activeEquipmentLink->equipment_id);
+            if ($eq) {
+                $activeEquipment = (object) [
+                    "equipment_id"   => $eq->id,
+                    "equipment_name" => trim(implode(" - ", array_filter([
+                        $eq->type,
+                        $eq->manufacturer,
+                        $eq->model
+                    ]))),
+                    "start_date"     => $activeEquipmentLink->start_date,
+                    "end_date"       => $activeEquipmentLink->end_date
+                ];
+            }
+        }
+
+        // 🔹 Também busca todos os equipamentos (para preencher o select)
+        $equipments = (new \Source\Models\App\Equipment())
+            ->find()
+            ->order("type ASC")
+            ->fetch(true);
+
+        echo json_encode([
+            "found"           => true,
+            "person"          => $person,
+            "account"         => $account,
+            "customer"        => $customer,
+            "equipments"      => $equipments,
+            "active_equipment" => $activeEquipment,
+        ]);
+    }
+
+
 
     public function clientForm(?array $data): void
     {
@@ -1469,6 +1648,11 @@ class App extends Controller
             }
         }
 
+        $people = (new \Source\Models\Person())
+            ->find()
+            ->order("full_name ASC")
+            ->fetch(true);
+
         // 🔹 3. Renderiza a página
         $this->renderPage("customers/form", [
             "title"          => $personId ? "Editar Cliente" : "Associar Cliente",
@@ -1480,7 +1664,9 @@ class App extends Controller
             "customer"       => $customer,
             "activePlan"     => $activePlan,
             "activeEquipment" => $activeEquipment,
-            "activeMenu"     => "clientes"
+            "activeMenu"     => "admin",
+            "activesubmenu"     => "admclientes",
+            "people"            => $people
         ]);
     }
 
@@ -1614,6 +1800,58 @@ class App extends Controller
         $json["redirect"] = url("/app/clientes");
         jsonResponse($json);
     }
+
+    public function myPlan(): void
+    {
+        $user = \Source\Models\Auth::account();
+
+        // Busca o cliente vinculado à pessoa logada
+        $customer = (new \Source\Models\App\Customer())
+            ->find("person_id = :pid", "pid={$user->id}")
+            ->fetch();
+
+        if (!$customer) {
+            $this->message->warning("Nenhum plano associado a este usuário.")->flash();
+            redirect("/app");
+            return;
+        }
+
+        // Busca o contrato ativo ou último contrato
+        $contract = (new \Source\Models\App\Contract())
+            ->find("customer_id = :cid", "cid={$customer->person_id}")
+            ->order("id DESC")
+            ->fetch();
+
+        // Busca o plano associado ao contrato
+        $plan = $contract ? (new \Source\Models\App\Plan())->findById($contract->plan_id) : null;
+
+        // Busca o equipamento associado
+        $equipmentLink = (new \Source\Models\App\CustomerEquipment())
+            ->find("customer_id = :cid AND end_date IS NULL", "cid={$customer->person_id}")
+            ->fetch();
+
+        $equipment = $equipmentLink
+            ? (new \Source\Models\App\Equipment())->findById($equipmentLink->equipment_id)
+            : null;
+
+        // Renderiza view
+        $this->renderPage("my-plan", [
+            "title" => "Detalhes do Meu Plano",
+            "activeMenu" => "cliente",
+            "activesubmenu" => "meuplano",
+            "plan" => $plan,
+            "equipment" => $equipment
+        ]);
+    }
+
+    public function serverStatus(): void
+    {
+        $this->renderPage("service-status", [
+            "activeMenu" => "cliente",
+            "activesubmenu" => "statusserver"
+        ]);
+    }
+
 
     public function customerPlan(): void
     {
@@ -1928,7 +2166,8 @@ class App extends Controller
             "pages"          => $pages,
             "limit"          => $limit,
             "total"          => $total,
-            "activeMenu"     => "support"
+            "activeMenu"     => "admin",
+            "activesubmenu"     => "admchamados",
         ]);
     }
 
@@ -2360,7 +2599,8 @@ class App extends Controller
             "byPriority" => $byPriority,
             "recentTickets" => $recentTickets,
             "avgHours" => $avgHours,
-            "activeMenu" => "support"
+            "activeMenu" => "admin",
+            "activesubmenu" => "admchamados",
         ]);
     }
 
@@ -2883,6 +3123,8 @@ class App extends Controller
             ->fetch(true);
 
         $this->renderPage("tickets/my-tickets", [
+            "activeMenu" => "cliente",
+            "activesubmenu" => "suporte",
             "tickets" => $tickets,
             "paginator" => null
         ], "Meus Chamados - " . CONF_SITE_NAME);
@@ -3079,6 +3321,39 @@ class App extends Controller
     // No topo do App.php, se tiver, remova todos os 'use' statements que eu passei (exceto Auth).
     // Vamos usar o FQN (caminho completo) para depurar a raiz do erro.
 
+    public function contractPlan(array $data): void
+    {
+        try {
+            $userId = Auth::account()->id;
+            $newPlanId = (int)($data['plan'] ?? 0);
+
+            // 1. Busca o Contrato Atual
+            $currentContract = (new Contract())->find("customer_id = :uid AND status = 'active'", "uid={$userId}")->fetch();
+
+            if ($currentContract) {
+                $json["message"] = $this->message->error("Cliente já tem contrato ativo. Não é possível realizar a contratação.")->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            // 2. Busca Planos
+            $newPlan = (new Plan())->findById($newPlanId);
+
+            if (!$newPlan) {
+                $json["message"] = $this->message->error("O plano selecionado é inválido. Tente novamente.")->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            // 4. Redireciona para a tela de pagamento / simulação.
+            $json["redirect"] = url("/app/contract/payment/plan/{$newPlanId}");
+            jsonResponse($json);
+        } catch (\Throwable $e) {
+            $this->message->error("Ocorreu um erro inesperado. Tente novamente.")->toast()->flash();
+            redirect("/app");
+        }
+    }
+
     public function upgradePlan(array $data): void
     {
         try {
@@ -3139,6 +3414,25 @@ class App extends Controller
         ]);
     }
 
+    public function contractPaymentSimulate(array $data): void
+    {
+        $planId = (int)($data['planId'] ?? 0);
+        $newPlan = (new \Source\Models\App\Plan())->findById($planId);
+
+        if (!$newPlan) {
+            $this->message->error("Plano inválido.")->toast()->flash();
+            redirect("/app");
+            return;
+        }
+
+        $this->renderPage("plans/contract-payment", [ // Nova View que vamos criar
+            "active"   => "home",
+            "title"    => "Simulação de Pagamento",
+            "subtitle" => "Conclua o pagamento para ativar o plano.",
+            "newPlan"  => $newPlan
+        ]);
+    }
+
 
 // No source/App/App.php
 
@@ -3178,6 +3472,73 @@ class App extends Controller
         return;
     }
 
+    public function contractProcess(array $data): void
+    {
+        $json = [];
+
+        try {
+            $account = Auth::account();
+            $userId = $account->id;
+            $planId = (int)($data['planId'] ?? $data['plan'] ?? 0);
+
+            if (!$planId) {
+                $json["message"] = $this->message->error("Plano inválido.")->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            $plan = (new Plan())->findById($planId);
+            if (!$plan) {
+                $json["message"] = $this->message->error("Plano não encontrado.")->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            // Garante que exista um registro de customer para esta pessoa
+            $customer = (new Customer())->find("person_id = :pid", "pid={$userId}")->fetch();
+            if (!$customer) {
+                $customer = new Customer();
+                $customer->person_id = $userId;
+                $customer->status = "active";
+                if (!$customer->save()) {
+                    $json["message"] = $customer->message()->toast()->render();
+                    jsonResponse($json);
+                    return;
+                }
+            }
+
+            // Verifica se já existe contrato ativo
+            $existing = (new Contract())->find("customer_id = :cid AND status = 'active'", "cid={$userId}")->fetch();
+            if ($existing) {
+                $json["message"] = $this->message->error("Cliente já possui um contrato ativo.")->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            // Cria novo contrato (contratação)
+            $contract = new Contract();
+            $contract->customer_id = $userId; // Nota: nesta base customer_id guarda person_id
+            $contract->plan_id = $planId;
+            $contract->start_date = date("Y-m-d");
+            $contract->status = "active";
+
+            if (!$contract->save()) {
+                $json["message"] = $contract->message()->toast()->render();
+                jsonResponse($json);
+                return;
+            }
+
+            $this->message->success("Plano contratado com sucesso!")->toast()->flash();
+            $json["redirect"] = url("/app/contract/success");
+            jsonResponse($json);
+            return;
+        } catch (\Throwable $e) {
+            error_log("Erro em contractProcess: " . $e->getMessage());
+            $this->message->error("Ocorreu um erro ao contratar o plano. Tente novamente.")->toast()->flash();
+            redirect("/app");
+        }
+    }
+
     /**
      * Exibe a página de sucesso após o upgrade simulado
      */
@@ -3187,6 +3548,19 @@ class App extends Controller
         $this->renderPage("plans/success", [
             "active"   => "home",
             "title"    => "Upgrade Concluído",
+            "subtitle" => "Seu novo plano já está ativo!"
+        ]);
+    }
+
+    /**
+     * Exibe a página de sucesso após o upgrade simulado
+     */
+    public function contractSuccess(): void
+    {
+        // A view 'plans/success' precisa ser criada na pasta themes/app/plans/
+        $this->renderPage("plans/contract-success", [
+            "active"   => "home",
+            "title"    => "Contratação Concluída",
             "subtitle" => "Seu novo plano já está ativo!"
         ]);
     }

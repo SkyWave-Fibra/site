@@ -3,13 +3,14 @@
 namespace Source\Models\App;
 
 use Source\Core\Model;
+use Source\Models\Account;
 
 class Employee extends Model
 {
     public function __construct()
     {
         // employee table uses person_id as primary key (verify schema)
-        parent::__construct("employee", ["person_id"], ["person_id", "role", "hire_date"]);
+        parent::__construct("employee", ["id"], ["person_id", "role", "hire_date"]);
     }
 
     /**
@@ -18,6 +19,11 @@ class Employee extends Model
     public function person(): ?\Source\Models\Person
     {
         return (new \Source\Models\Person())->findById($this->person_id);
+    }
+
+    public function account(): Account
+    {
+        return (new Account())->find("person_id = :pid", "pid={$this->person_id}")->fetch();
     }
 
     public function photo(): string

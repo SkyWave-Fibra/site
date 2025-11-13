@@ -61,6 +61,8 @@ $route->group('/app');
 $route->get('/', 'App:home');
 
 // ROTA PARA STATUS DE SERVIÇO (ACESSO EM /app/status)
+$route->get("/status-do-servidor", "App:serverStatus");
+
 $route->get('/status', 'App:serviceStatus');
 $route->post('/status/save', 'App:saveServiceStatusPost');
 $route->delete('/status/delete/{id}', 'App:deleteServiceStatus');
@@ -78,6 +80,7 @@ $route->get("/equipamentos/{page}/{limit}", "App:equipments");
 $route->get("/equipamento/{id}", "App:equipment");
 $route->get("/equipamento/criar", "App:equipment");
 $route->get("/equipment/delete/{id}", "App:deleteEquipment");
+$route->post('/equipment/delete', 'App:deleteEquipment');
 
 $route->post("/equipments", "App:equipments");
 $route->post("/equipment/save", "App:saveEquipmentPost");
@@ -108,19 +111,26 @@ $route->post('/users/save',         'App:saveUserPost');
 $route->post('/users/roles',        'App:saveUserRolesPost');
 
 // Planos
+$route->get("/meu-plano", "App:myPlan");
 $route->get("/plano", "App:customerPlan");
 $route->get('/planos', 'App:plans');
 $route->get('/plano/{id}', 'App:planForm');
 $route->get('/plano/novo', 'App:planForm');
 $route->post('/plans/save', 'App:savePlan');
+
 $route->post('/upgrade/plan', 'App:upgradePlan');             // Rota para validar o Upgrade
+$route->post('/contract/plan', 'App:contractPlan');             // Rota para validar o Upgrade
 $route->get('/payment/plan/{planId}', 'App:paymentSimulate'); // Rota para tela de simulação
+$route->get('/contract/payment/plan/{planId}', 'App:contractPaymentSimulate'); // Rota para tela de simulação
 $route->post('/upgrade/process', 'App:upgradeProcess');       // Rota para confirmar o contrato
+$route->post('/contract/process', 'App:contractProcess');       // Rota para confirmar o contrato
 $route->get('/app/contato', 'App:contact');                   // Rota de Contato
 $route->get('/upgrade/success', 'App:upgradeSuccess');
+$route->get('/contract/success', 'App:contractSuccess');
 
 // CLientes
 $route->get('/clientes', 'App:customers');
+$route->post('/clientes', 'App:customers');
 
 // Página para gerenciar/associar cliente — vamos abrir a mesma view para buscar por CPF
 $route->get('/cliente/{id}', 'App:clientForm'); // caso queira editar por id do person/customer
@@ -128,6 +138,7 @@ $route->get('/cliente/novo', 'App:clientForm');
 
 // AJAX: busca por CPF (POST)
 $route->post('/clientes/buscar', 'App:searchClientByCpf');
+$route->post('/clientes/buscar-por-id', 'App:searchClientById');
 
 // AJAX: salvar cliente / alocar equipamento / definir plano
 $route->post('/client/save', 'App:customerSave');

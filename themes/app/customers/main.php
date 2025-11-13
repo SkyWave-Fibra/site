@@ -95,9 +95,7 @@
                                             Ações
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="<?= url("/app/cliente/{$customer->person_id}"); ?>">Ver</a></li>
                                             <li><a class="dropdown-item" href="<?= url("/app/cliente/{$customer->person_id}"); ?>">Editar</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete(<?= $customer->id; ?>)">Excluir</a></li>
                                         </ul>
                                     </div>
                                 </td>

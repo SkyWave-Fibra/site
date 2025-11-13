@@ -23,13 +23,8 @@
         <!--begin::Card toolbar-->
         <div class="card-toolbar">
             <div class="d-flex justify-content-end" data-kt-user-table-toolbar="base">
-                <!--begin::Export-->
-                <button type="button" class="btn btn-light-primary me-3">
-                    <i class="ki-outline ki-exit-up fs-2"></i>Exportar
-                </button>
-                <!--end::Export-->
                 <!--begin::Add-->
-                <a href="<?= url("/app/funcionario/criar"); ?>" class="btn btn-primary">
+                <a href="<?= url("/app/funcionario/associar"); ?>" class="btn btn-primary">
                     <i class="ki-outline ki-plus fs-2"></i>Novo Funcionário
                 </a>
                 <!--end::Add-->
@@ -120,15 +115,8 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item"
-                                                    href="<?= url("/app/funcionario/{$employee->person_id}"); ?>">
-                                                    Ver / Editar
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item text-danger"
-                                                    href="#"
-                                                    onclick="confirmDelete(<?= $employee->person_id; ?>)">
-                                                    Excluir
+                                                    href="<?= url("/app/funcionario/{$employee->id}"); ?>">
+                                                    Editar
                                                 </a>
                                             </li>
                                         </ul>

@@ -96,6 +96,21 @@
                     <div class="text-gray-600 fs-base text-center fw-semibold">
                         Faça tudo a partir do seu painel de controle.
                     </div>
+                    <div class="text-center mt-10">
+                        <a href="<?= url() ?>"
+                            class="btn btn-primary px-10 py-4 fs-4 fw-bold rounded-pill shadow-sm"
+                            style="
+                                background: linear-gradient(90deg, #009EF7, #3A8DFF);
+                                border: none;
+                                transition: all .3s ease;
+                            "
+                            onmouseover="this.style.transform='scale(1.04)'"
+                            onmouseout="this.style.transform='scale(1)'">
+                            <i class="ki-outline ki-rocket fs-2 me-2"></i>
+                            Página Inicial
+                        </a>
+                    </div>
+
                 </div>
             </div>
             <!--end::Aside-->

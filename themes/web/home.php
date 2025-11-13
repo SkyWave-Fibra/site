@@ -503,125 +503,28 @@
                 <div class="tns tns-default" style="direction: ltr">
                     <!--begin::Wrapper-->
                     <div data-tns="true" data-tns-loop="true" data-tns-swipe-angle="false" data-tns-speed="2000" data-tns-autoplay="true" data-tns-autoplay-timeout="18000" data-tns-controls="true" data-tns-nav="false" data-tns-items="1" data-tns-center="false" data-tns-dots="false" data-tns-prev-button="#kt_team_slider_prev" data-tns-next-button="#kt_team_slider_next" data-tns-responsive="{1200: {items: 3}, 992: {items: 2}}">
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-1.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Paul Miles</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Development Lead</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-2.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Melisa Marcus</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Creative Director</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-5.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">David Nilson</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Python Expert</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-20.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Anne Clarc</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Project Manager</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-23.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Ricky Hunt</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Art Director</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-12.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Alice Wayde</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">Marketing Manager</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
-                        <!--begin::Item-->
-                        <div class="text-center">
-                            <!--begin::Photo-->
-                            <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('assets/media/avatars/300-9.jpg')"></div>
-                            <!--end::Photo-->
-                            <!--begin::Person-->
-                            <div class="mb-0">
-                                <!--begin::Name-->
-                                <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-3">Carles Puyol</a>
-                                <!--end::Name-->
-                                <!--begin::Position-->
-                                <div class="text-muted fs-6 fw-semibold mt-1">QA Managers</div>
-                                <!--begin::Position-->
-                            </div>
-                            <!--end::Person-->
-                        </div>
-                        <!--end::Item-->
+
+                        <?php if (!empty($employees)): ?>
+                            <?php foreach ($employees as $employee): ?>
+                                <!--begin::Item-->
+                                <div class="text-center">
+                                    <!--begin::Photo-->
+                                    <div class="octagon mx-auto mb-5 d-flex w-200px h-200px bgi-no-repeat bgi-size-contain bgi-position-center" style="background-image:url('<?= $employee->account()->photo() ?>')"></div>
+                                    <!--end::Photo-->
+                                    <!--begin::Person-->
+                                    <div class="mb-0">
+                                        <!--begin::Name-->
+                                        <a href="javascript:void(0);" class="text-gray-900 fw-bold text-hover-primary fs-3"><?= $employee->person()->full_name ?></a>
+                                        <!--end::Name-->
+                                        <!--begin::Position-->
+                                        <div class="text-muted fs-6 fw-semibold mt-1"><?= $employee->role_name ?></div>
+                                        <!--begin::Position-->
+                                    </div>
+                                    <!--end::Person-->
+                                </div>
+                                <!--end::Item-->
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                     <!--end::Wrapper-->
                     <!--begin::Button-->
@@ -844,7 +747,7 @@
                                     <img src="assets/media/avatars/300-1.jpg" alt="" />
                                 </div>
                                 <div class="flex-grow-1">
-                                    <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-6">Carlos Andrade</a>
+                                    <a href="javascript:void(0);" class="text-gray-900 fw-bold text-hover-primary fs-6">Carlos Andrade</a>
                                     <span class="text-muted d-block fw-bold">Cliente Residencial</span>
                                 </div>
                             </div>
@@ -877,7 +780,7 @@
                                     <img src="assets/media/avatars/300-2.jpg" alt="" />
                                 </div>
                                 <div class="flex-grow-1">
-                                    <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-6">Fernanda Lima</a>
+                                    <a href="javascript:void(0);" class="text-gray-900 fw-bold text-hover-primary fs-6">Fernanda Lima</a>
                                     <span class="text-muted d-block fw-bold">Cliente Comercial</span>
                                 </div>
                             </div>
@@ -909,7 +812,7 @@
                                     <img src="assets/media/avatars/300-16.jpg" alt="" />
                                 </div>
                                 <div class="flex-grow-1">
-                                    <a href="#" class="text-gray-900 fw-bold text-hover-primary fs-6">Marcos Oliveira</a>
+                                    <a href="javascript:void(0);" class="text-gray-900 fw-bold text-hover-primary fs-6">Marcos Oliveira</a>
                                     <span class="text-muted d-block fw-bold">Cliente Empresarial</span>
                                 </div>
                             </div>
@@ -931,7 +834,7 @@
                             Milhares de clientes já estão conectados. E você, vai ficar de fora?
                         </div>
                     </div>
-                    <a href="#planos" class="btn btn-lg btn-outline border-2 btn-outline-white flex-shrink-0 my-2">
+                    <a href="#pricing" class="btn btn-lg btn-outline border-2 btn-outline-white flex-shrink-0 my-2">
                         Conheça nossos planos
                     </a>
                 </div>
@@ -1000,9 +903,9 @@
                                     <!--begin::Subtitle-->
                                     <h4 class="fw-bold text-gray-500 mb-6">Links Úteis</h4>
                                     <!--end::Subtitle-->
-                                    <a href="#planos" class="text-white opacity-50 text-hover-primary fs-5 mb-6">Nossos Planos</a>
-                                    <a href="#clients" class="text-white opacity-50 text-hover-primary fs-5 mb-6">Depoimentos</a>
-                                    <a href="#contato" class="text-white opacity-50 text-hover-primary fs-5">Área do Cliente</a>
+                                    <a href="#pricing" class="text-white opacity-50 text-hover-primary fs-5 mb-6">Nossos Planos</a>
+                                    <a href="#clientsgti" class="text-white opacity-50 text-hover-primary fs-5 mb-6">Depoimentos</a>
+                                    <a href="<?= url("entrar") ?>" class="text-white opacity-50 text-hover-primary fs-5">Área do Cliente</a>
                                 </div>
                                 <!--end::Links-->
 
@@ -1010,19 +913,15 @@
                                 <div class="d-flex fw-semibold flex-column ms-lg-20">
                                     <h4 class="fw-bold text-gray-500 mb-6">Siga a Sky Wave</h4>
 
-                                    <a href="#" class="mb-6">
-                                        <img src="assets/media/svg/brand-logos/facebook-4.svg" class="h-20px me-2" alt="Facebook" />
-                                        <span class="text-white opacity-50 text-hover-primary fs-5">Facebook</span>
-                                    </a>
-                                    <a href="#" class="mb-6">
+                                    <a href="https://instagram.com/skywave_fibra" target="_blank" class="mb-6">
                                         <img src="assets/media/svg/brand-logos/instagram-2-1.svg" class="h-20px me-2" alt="Instagram" />
                                         <span class="text-white opacity-50 text-hover-primary fs-5">Instagram</span>
                                     </a>
-                                    <a href="#" class="mb-6">
-                                        <img src="assets/media/svg/brand-logos/twitter.svg" class="h-20px me-2" alt="Twitter" />
-                                        <span class="text-white opacity-50 text-hover-primary fs-5">Twitter</span>
+                                    <a href="https://facebook.com/SkywaveFibra" target="_blank" class="mb-6">
+                                        <img src="assets/media/svg/brand-logos/facebook-4.svg" class="h-20px me-2" alt="Facebook" />
+                                        <span class="text-white opacity-50 text-hover-primary fs-5">Facebook</span>
                                     </a>
-                                    <a href="#" class="mb-6">
+                                    <a href="https://wa.me/5575987092386" target="_blank" class="mb-6">
                                         <img src="../../assets/images/front/whatsapp.svg" class="h-20px me-2" alt="WhatsApp" />
                                         <span class="text-white opacity-50 text-hover-primary fs-5">WhatsApp</span>
                                     </a>
@@ -1047,7 +946,7 @@
                         <!--begin::Copyright-->
                         <div class="d-flex align-items-center order-2 order-md-1">
                             <!--begin::Logo-->
-                            <a href="index.html">
+                            <a href="<?= url() ?>">
                                 <img alt="Sky Wave Fibra" src="../../assets/images/front/header.png" class="h-60px h-md-60px rounded" />
                             </a>
                             <!--end::Logo-->
@@ -1057,16 +956,7 @@
                         </div>
                         <!--end::Copyright-->
 
-                        <!--begin::Menu-->
-                        <ul class="menu menu-gray-600 menu-hover-primary fw-semibold fs-6 fs-md-5 order-1 mb-5 mb-md-0">
-                            <li class="menu-item">
-                                <a href="#planos" class="menu-link px-2">Planos</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="#contato" class="menu-link px-2">Contato</a>
-                            </li>
-                        </ul>
-                        <!--end::Menu-->
+                        
                     </div>
                     <!--end::Wrapper-->
                 </div>

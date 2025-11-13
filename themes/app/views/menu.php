@@ -30,7 +30,7 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="<?= url("app/plano") ?>" class="menu-link active">
+                                            <a href="<?= url("app/meu-plano") ?>" class="menu-link <?= isset($activesubmenu) && $activesubmenu == "meuplano" ? "active" : "" ?>">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-element-11 text-primary fs-1"></i>
                                                 </span>
@@ -44,6 +44,7 @@
                                         <!--end:Menu item-->
                                     </div>
                                     <!--end:Col-->
+                                    <?php /*
                                     <!--begin:Col-->
                                     <div class="col-lg-6 mb-3">
                                         <!--begin:Menu item-->
@@ -63,12 +64,13 @@
                                         <!--end:Menu item-->
                                     </div>
                                     <!--end:Col-->
+                                    */ ?>
                                     <!--begin:Col-->
                                     <div class="col-lg-6 mb-3">
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="<?= url("app/meus-chamados") ?>" class="menu-link">
+                                            <a href="<?= url("app/meus-chamados") ?>" class="menu-link <?= isset($activesubmenu) && $activesubmenu == "suporte" ? "active" : "" ?>">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-abstract-44 text-info fs-1"></i>
                                                 </span>
@@ -87,12 +89,12 @@
                                         <!--begin:Menu item-->
                                         <div class="menu-item p-0 m-0">
                                             <!--begin:Menu link-->
-                                            <a href="<?= url("/app/status") ?>" class="menu-link">
+                                            <a href="<?= url("/app/status-do-servidor") ?>" class="menu-link <?= isset($activesubmenu) && $activesubmenu == "statusserver" ? "active" : "" ?>">
                                                 <span class="menu-custom-icon d-flex flex-center flex-shrink-0 rounded w-40px h-40px me-3">
                                                     <i class="ki-outline ki-chart-simple text-gray-900 fs-1"></i>
                                                 </span>
                                                 <span class="d-flex flex-column">
-                                                    <span class="fs-6 fw-bold text-gray-800">Status de Serviço</span>
+                                                    <span class="fs-6 fw-bold text-gray-800">Status de Servidor</span>
                                                     <span class="fs-7 fw-semibold text-muted">Como está o provedor?</span>
                                                 </span>
                                             </a>
@@ -183,6 +185,10 @@
             </div>
             <!--end:Menu item-->
             */ ?>
+
+
+
+
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" data-kt-menu-offset="-400,0" class="<?= isset($activeMenu) && $activeMenu == "admin" ? "here" : "" ?> menu-item menu-lg-down-accordion me-0 me-lg-2">
                 <!--begin:Menu link-->
@@ -203,22 +209,22 @@
                             <ul class="nav nav-stretch nav-line-tabs fw-bold fs-6 p-0 p-lg-10 flex-nowrap flex-grow-1">
                                 <!--begin:Nav item-->
                                 <li class="nav-item mx-lg-1">
-                                    <a class="nav-link py-3 py-lg-6 active text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_clientes">Clientes</a>
+                                    <a class="nav-link py-3 py-lg-6 <?= !isset($activesubmenu) || ($activesubmenu != "admclientes" && $activesubmenu != "admequipamentos" && $activesubmenu != "admfuncionarios" && $activesubmenu != "admchamados") ? "active" : "" ?> <?= isset($activesubmenu) && $activesubmenu == "admclientes" ? "active" : "" ?> text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_clientes">Clientes</a>
                                 </li>
                                 <!--end:Nav item-->
                                 <!--begin:Nav item-->
                                 <li class="nav-item mx-lg-1">
-                                    <a class="nav-link py-3 py-lg-6 text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_equipamentos">Equipamentos</a>
+                                    <a class="nav-link py-3 py-lg-6 <?= isset($activesubmenu) && $activesubmenu == "admequipamentos" ? "active" : "" ?> text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_equipamentos">Equipamentos</a>
                                 </li>
                                 <!--end:Nav item-->
                                 <!--begin:Nav item-->
                                 <li class="nav-item mx-lg-1">
-                                    <a class="nav-link py-3 py-lg-6 text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_funcionarios">Funcionários</a>
+                                    <a class="nav-link py-3 py-lg-6 <?= isset($activesubmenu) && $activesubmenu == "admfuncionarios" ? "active" : "" ?> text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_funcionarios">Funcionários</a>
                                 </li>
                                 <!--end:Nav item-->
                                 <!--begin:Nav item-->
                                 <li class="nav-item mx-lg-1">
-                                    <a class="nav-link py-3 py-lg-6 text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_chamados">Chamados</a>
+                                    <a class="nav-link py-3 py-lg-6 <?= isset($activesubmenu) && $activesubmenu == "admchamados" ? "active" : "" ?> text-active-primary" href="#" data-bs-toggle="tab" data-bs-target="#menu_chamados">Chamados</a>
                                 </li>
                                 <!--end:Nav item-->
                             </ul>
@@ -227,7 +233,7 @@
                         <!--begin:Tab content-->
                         <div class="tab-content py-4 py-lg-8 px-lg-7">
                             <!--begin:Tab pane-->
-                            <div class="tab-pane active w-lg-600px" id="menu_clientes">
+                            <div class="tab-pane <?= !isset($activesubmenu) || ($activesubmenu != "admclientes" && $activesubmenu != "admequipamentos" && $activesubmenu != "admfuncionarios" && $activesubmenu != "admchamados") ? "active" : "" ?> <?= isset($activesubmenu) && $activesubmenu == "admclientes" ? "active" : "" ?> w-lg-600px" id="menu_clientes">
                                 <!--begin:Row-->
                                 <div class="row">
                                     <!--begin:Col-->
@@ -273,7 +279,7 @@
                             </div>
                             <!--end:Tab pane-->
                             <!--begin:Tab pane-->
-                            <div class="tab-pane w-lg-600px" id="menu_equipamentos">
+                            <div class="tab-pane <?= isset($activesubmenu) && $activesubmenu == "admequipamentos" ? "active" : "" ?> w-lg-600px" id="menu_equipamentos">
                                 <!--begin:Row-->
                                 <div class="row">
                                     <!--begin:Col-->
@@ -319,7 +325,7 @@
                             </div>
                             <!--end:Tab pane-->
                             <!--begin:Tab pane-->
-                            <div class="tab-pane w-lg-600px" id="menu_funcionarios">
+                            <div class="tab-pane <?= isset($activesubmenu) && $activesubmenu == "admfuncionarios" ? "active" : "" ?> w-lg-600px" id="menu_funcionarios">
                                 <!--begin:Row-->
                                 <div class="row">
                                     <!--begin:Col-->
@@ -356,7 +362,7 @@
                             </div>
                             <!--end:Tab pane-->
                             <!--begin:Tab pane-->
-                            <div class="tab-pane w-lg-600px" id="menu_chamados">
+                            <div class="tab-pane <?= isset($activesubmenu) && $activesubmenu == "admchamados" ? "active" : "" ?> w-lg-600px" id="menu_chamados">
                                 <!--begin:Row-->
                                 <div class="row">
                                     <!--begin:Col-->
@@ -418,6 +424,10 @@
                 <!--end:Menu sub-->
             </div>
             <!--end:Menu item-->
+
+
+
+
             <!--begin:Menu item-->
             <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" data-kt-menu-offset="22,0" class="<?= isset($activeMenu) && $activeMenu == "sistema" ? "here" : "" ?> menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                 <!--begin:Menu link-->
