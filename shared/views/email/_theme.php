@@ -16,7 +16,7 @@
         <thead>
             <tr style="background-color: #202942; padding: 3px 0; line-height: 28px; text-align: center; color: #fff; font-size: 24px; font-weight: 700; letter-spacing: 1px;">
                 <th scope="col">
-                    <a href="<?= CONF_URL_BASE; ?>"><img src="<?= CONF_URL_BASE . "/shared/assets/images/logo/logo-white.png"; ?>" height="80" alt="" style="padding: 15px;"></a>
+                    <a href="<?= CONF_URL_BASE; ?>"><img src="<?= CONF_URL_BASE . "/shared/assets/images/front/header.png"; ?>" height="80" alt="" style="padding: 15px;"></a>
                 </th>
             </tr>
         </thead>

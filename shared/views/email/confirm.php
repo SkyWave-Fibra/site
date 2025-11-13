@@ -2,7 +2,7 @@
 
 <tr>
     <td style="padding: 48px 24px 0; color: #161c2d; font-size: 18px; font-weight: 600;">
-        Olá <?= $first_name; ?>, seja bem vindo ao <?= CONF_SITE_NAME ?>!
+        Olá <?= $full_name; ?>, seja bem vindo ao <?= CONF_SITE_NAME ?>!
     </td>
 </tr>
 <tr>

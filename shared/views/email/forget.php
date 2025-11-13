@@ -2,7 +2,7 @@
 
 <tr>
     <td style="padding: 48px 24px 0; color: #161c2d; font-size: 18px; font-weight: 600;">
-        Perdeu a sua senha, <?= $first_name; ?>?
+        Perdeu a sua senha, <?= $full_name; ?>?
     </td>
 </tr>
 <tr>
