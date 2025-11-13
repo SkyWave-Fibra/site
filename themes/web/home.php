@@ -956,7 +956,7 @@
                         </div>
                         <!--end::Copyright-->
 
-                        
+
                     </div>
                     <!--end::Wrapper-->
                 </div>
@@ -1018,6 +1018,36 @@
             });
         });
     </script>
+
+    <script>
+        // Espera o DOM carregar
+        document.addEventListener("DOMContentLoaded", function() {
+
+            // Seleciona todos os links internos com #
+            const links = document.querySelectorAll('a[href^="#"]');
+
+            links.forEach(link => {
+                link.addEventListener("click", function(e) {
+                    const targetId = this.getAttribute("href");
+
+                    // Ignora se o href for só "#" (sem destino)
+                    if (targetId === "#") return;
+
+                    const targetEl = document.querySelector(targetId);
+
+                    if (targetEl) {
+                        e.preventDefault(); // Impede o salto instantâneo
+                        targetEl.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                    }
+                });
+            });
+
+        });
+    </script>
+
 
 
 
