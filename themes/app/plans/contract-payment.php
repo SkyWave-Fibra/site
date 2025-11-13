@@ -50,7 +50,7 @@ $fakeBoletoNumber = "34191.09008 10000.000000 00000.123456 9 644500000" . ($newP
                         <div class="card-body">
                             <h5 class="fw-bold mb-3 text-success">Pagamento por PIX</h5>
                             <p class="fw-semibold text-muted">Use a chave Telefone: <strong class="text-success"><?= $fakePixKey; ?></strong></p>
-                            <img src="https://via.placeholder.com/150?text=QR+CODE+PIX" alt="QR Code Fictício" class="w-150px h-150px rounded border p-2">
+                            <img src="<?= url("shared/assets/images/qr.png") ?>" alt="QR Code Fictício" class="w-150px h-150px rounded border p-2">
                             <p class="fs-6 mt-3">Valor: **<?= $newPlan->priceFormatted(); ?>**</p>
                         </div>
                     </div>
